@@ -41,7 +41,9 @@
     r.setOptions({ mode: s.mode, mult: s.mult, imbalance: s.imbalance, shading: s.shading,
       volFilter: s.volFilter, stackedImb: s.stackedImb,
       showPOC: s.showPOC, showImb: s.showImb, showProfile: s.showProfile,
-      showVA: s.showVA, showCVD: s.showCVD, showMatrix: s.showMatrix });
+      showVA: s.showVA, showCVD: s.showCVD, showMatrix: s.showMatrix,
+      showVWAP: s.showVWAP, showSMA: s.showSMA, smaPeriod: s.smaPeriod,
+      showEMA: s.showEMA, emaPeriod: s.emaPeriod, showCPR: s.showCPR });
   }
 
   function configureEngine() {

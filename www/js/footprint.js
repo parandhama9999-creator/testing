@@ -316,6 +316,70 @@
     return out;
   };
 
+  // ---- Indicators ----------------------------------------------------------------------------
+  P.vwap = function () {
+    if (this._vwapCache && this._vwapCache.version === this.version) return this._vwapCache.values;
+    var out = new Array(this.bars.length), cumVol = 0, cumTP = 0, lastDay = -1;
+    for (var i = 0; i < this.bars.length; i++) {
+      var b = this.bars[i], day = Math.floor(b.t / 86400000);
+      if (day !== lastDay) { cumVol = 0; cumTP = 0; lastDay = day; }
+      cumVol += b.v;
+      cumTP += (b.h + b.l + b.c) / 3 * b.v;
+      out[i] = cumVol > 0 ? cumTP / cumVol : null;
+    }
+    this._vwapCache = { version: this.version, values: out };
+    return out;
+  };
+
+  P.sma = function (period) {
+    var ck = '_sma' + period;
+    if (this[ck] && this[ck].version === this.version) return this[ck].values;
+    var n = this.bars.length, out = new Array(n), sum = 0;
+    for (var i = 0; i < n; i++) {
+      sum += this.bars[i].c;
+      if (i >= period) sum -= this.bars[i - period].c;
+      out[i] = i >= period - 1 ? sum / period : null;
+    }
+    this[ck] = { version: this.version, values: out };
+    return out;
+  };
+
+  P.ema = function (period) {
+    var ck = '_ema' + period;
+    if (this[ck] && this[ck].version === this.version) return this[ck].values;
+    var n = this.bars.length, out = new Array(n), k = 2 / (period + 1), prev = null, sum = 0;
+    for (var i = 0; i < n; i++) {
+      var c = this.bars[i].c;
+      if (prev == null) {
+        sum += c;
+        if (i >= period - 1) { prev = sum / period; out[i] = prev; } else out[i] = null;
+      } else { prev = c * k + prev * (1 - k); out[i] = prev; }
+    }
+    this[ck] = { version: this.version, values: out };
+    return out;
+  };
+
+  P.cpr = function () {
+    if (this._cprCache && this._cprCache.version === this.version) return this._cprCache.values;
+    var n = this.bars.length, dayMap = new Map();
+    for (var i = 0; i < n; i++) {
+      var b = this.bars[i], day = Math.floor(b.t / 86400000), d = dayMap.get(day);
+      if (!d) { d = { h: b.h, l: b.l, c: b.c }; dayMap.set(day, d); }
+      else { if (b.h > d.h) d.h = b.h; if (b.l < d.l) d.l = b.l; d.c = b.c; }
+    }
+    var keys = Array.from(dayMap.keys()).sort(function (a, bb) { return a - bb; });
+    var cprByDay = new Map();
+    for (var j = 1; j < keys.length; j++) {
+      var pd = dayMap.get(keys[j - 1]);
+      var piv = (pd.h + pd.l + pd.c) / 3, bc = (pd.h + pd.l) / 2, tc = piv * 2 - bc;
+      cprByDay.set(keys[j], { p: piv, bc: Math.min(bc, tc), tc: Math.max(bc, tc) });
+    }
+    var out2 = new Array(n);
+    for (var ii = 0; ii < n; ii++) out2[ii] = cprByDay.get(Math.floor(this.bars[ii].t / 86400000)) || null;
+    this._cprCache = { version: this.version, values: out2 };
+    return out2;
+  };
+
   FootprintEngine.binKey = binKey;
   OF.FootprintEngine = FootprintEngine;
 })();

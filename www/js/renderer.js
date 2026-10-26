@@ -24,12 +24,18 @@
     this.shading = 'dark';
     this.volFilter = 0;
     this.stackedImb = 3;
-    this.showPOC = true;
+    this.showPOC = false;
     this.showImb = true;
-    this.showProfile = true;
-    this.showVA = true;
-    this.showCVD = true;
-    this.showMatrix = true;
+    this.showProfile = false;
+    this.showVA = false;
+    this.showCVD = false;
+    this.showMatrix = false;
+    this.showVWAP = false;
+    this.showSMA = false;
+    this.smaPeriod = 20;
+    this.showEMA = false;
+    this.emaPeriod = 9;
+    this.showCPR = false;
     this.view = { barW: 64, rowH: 16, offset: 0, center: null, follow: true };
     this.W = 0; this.H = 0; this.dpr = 1;
     this.raf = 0;
@@ -73,6 +79,12 @@
     if (o.showVA != null) this.showVA = !!o.showVA;
     if (o.showCVD != null) this.showCVD = !!o.showCVD;
     if (o.showMatrix != null) this.showMatrix = !!o.showMatrix;
+    if (o.showVWAP != null) this.showVWAP = !!o.showVWAP;
+    if (o.showSMA != null) this.showSMA = !!o.showSMA;
+    if (o.smaPeriod) this.smaPeriod = Math.max(2, +o.smaPeriod || 20);
+    if (o.showEMA != null) this.showEMA = !!o.showEMA;
+    if (o.emaPeriod) this.emaPeriod = Math.max(2, +o.emaPeriod || 9);
+    if (o.showCPR != null) this.showCPR = !!o.showCPR;
     this.markDirty();
   };
 
@@ -183,6 +195,7 @@
     this._grid(L, S);
     this._valueArea(L, S);
     this._bars(L, S);
+    this._indicators(L, S);
     this._lastLine(L, S);
     this._tradeLines(L, S);
     if (e.isSeed) this._watermark(L);
@@ -315,6 +328,52 @@
       ctx.fillStyle = MUTED; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
       ctx.fillText('partial', left + w / 2, S.yOf((vw.keys[0] + 1) * S.bin) - 6);
       ctx.font = font + 'px ' + MONO;
+    }
+  };
+
+  P._indicators = function (L, S) {
+    var ctx = this.ctx, e = this.engine;
+    function series(vals, col, w) {
+      ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = w || 1.5;
+      ctx.beginPath();
+      var go = false;
+      for (var i = S.i0; i <= S.i1; i++) {
+        var v = vals[i]; if (v == null) { go = false; continue; }
+        var x = S.xOf(i), y = S.yOf(v);
+        if (!go) { ctx.moveTo(x, y); go = true; } else ctx.lineTo(x, y);
+      }
+      ctx.stroke(); ctx.restore();
+    }
+    function tag(label, vals, col) {
+      var last = Math.min(S.i1, e.bars.length - 1), v = vals[last];
+      if (v == null) return;
+      ctx.save(); ctx.fillStyle = col; ctx.font = 'bold 9px sans-serif';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(label, S.xOf(last) + S.barW * 0.6 + 2, S.yOf(v));
+      ctx.restore();
+    }
+    if (this.showVWAP) { var vw = e.vwap(); series(vw, '#f59e0b'); tag('VWAP', vw, '#f59e0b'); }
+    if (this.showSMA)  { var sm = e.sma(this.smaPeriod);  series(sm, '#60a5fa'); tag('SMA' + this.smaPeriod, sm, '#60a5fa'); }
+    if (this.showEMA)  { var em = e.ema(this.emaPeriod);  series(em, '#c084fc'); tag('EMA' + this.emaPeriod, em, '#c084fc'); }
+    if (this.showCPR && e.bars.length) {
+      var cprs = e.cpr(), segDay = null, segCpr = null, segX0 = null, segs = [];
+      for (var i = S.i0; i <= S.i1; i++) {
+        var day = Math.floor(e.bars[i].t / 86400000), cpr = cprs[i];
+        if (day !== segDay) {
+          if (segCpr) segs.push({ cpr: segCpr, x0: segX0, x1: S.xOf(i - 1) + S.barW / 2 });
+          segDay = day; segCpr = cpr; segX0 = cpr ? S.xOf(i) - S.barW / 2 : null;
+        }
+      }
+      if (segCpr) segs.push({ cpr: segCpr, x0: segX0, x1: S.xOf(Math.min(S.i1, e.bars.length - 1)) + S.barW / 2 });
+      segs.forEach(function (seg) {
+        [{ v: seg.cpr.p, c: '#fbbf24', l: 'P' }, { v: seg.cpr.bc, c: '#34d399', l: 'BC' }, { v: seg.cpr.tc, c: '#f87171', l: 'TC' }].forEach(function (ln) {
+          var y = Math.round(S.yOf(ln.v)) + 0.5;
+          ctx.save(); ctx.strokeStyle = ln.c; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+          ctx.beginPath(); ctx.moveTo(seg.x0, y); ctx.lineTo(seg.x1, y); ctx.stroke();
+          ctx.fillStyle = ln.c; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+          ctx.fillText(ln.l, seg.x0 + 3, y); ctx.restore();
+        });
+      });
     }
   };
 
@@ -619,8 +678,8 @@
       if (self.pinch && self.ptrs.size >= 2) {
         var pts = Array.from(self.ptrs.values()), pi = self.pinch;
         var dx = Math.abs(pts[0].x - pts[1].x), dy = Math.abs(pts[0].y - pts[1].y);
-        if (pi.dx0 > 30) self.view.barW = U.clamp(pi.bw0 * (dx / pi.dx0), 3, 240);
-        if (pi.dy0 > 30) self.view.rowH = U.clamp(pi.rh0 * (dy / pi.dy0), 2, 64);
+        self.view.barW = U.clamp(pi.bw0 * (dx / Math.max(pi.dx0, 20)), 3, 240);
+        self.view.rowH = U.clamp(pi.rh0 * (dy / Math.max(pi.dy0, 20)), 2, 64);
         self.markDirty();
         return;
       }

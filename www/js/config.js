@@ -44,7 +44,7 @@
     MAX_BARS: 300,
     KLINE_LIMIT: 100,
     SEED_BARS: 20,
-    FOOTPRINT_BACKFILL_BARS: 3,
+    FOOTPRINT_BACKFILL_BARS: 10,
     AGG_MAX_REQUESTS: 10,
     WS: {
       HEARTBEAT_MS: 15000,
@@ -116,12 +116,19 @@
       // ---- Cluster settings ---------------------------------------------------------------
       volFilter: 0,       // hide cells whose total volume is below this (0 = show all)
       stackedImb: 3,      // highlight N+ consecutive same-direction imbalances (0 = off)
-      showPOC: true,      // draw the POC outline on each bar
+      showPOC: false,     // draw the POC outline on each bar
       showImb: true,      // draw diagonal imbalance markers
-      showProfile: true,  // show the session volume profile panel
-      showVA: true,       // draw VAH/VAL dashed lines
-      showCVD: true,      // show cumulative volume delta strip
-      showMatrix: true    // show the bottom OHLCV matrix rows
+      showProfile: false, // show the session volume profile panel
+      showVA: false,      // draw VAH/VAL dashed lines
+      showCVD: false,     // show cumulative volume delta strip
+      showMatrix: false,  // show the bottom OHLCV matrix rows
+      // ---- Indicators -----------------------------------------------------------------------
+      showVWAP: false,    // session VWAP overlay (resets at UTC midnight)
+      showSMA: false,     // simple moving average
+      smaPeriod: 20,
+      showEMA: false,     // exponential moving average
+      emaPeriod: 9,
+      showCPR: false      // central pivot range (P / BC / TC from previous day)
     },
 
     AFFILIATES: [

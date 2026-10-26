@@ -210,6 +210,13 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
     <label style="flex-direction:row;align-items:center;gap:6px"><input id="setShowCVD" type="checkbox"> CVD strip</label>
     <label style="flex-direction:row;align-items:center;gap:6px"><input id="setShowMatrix" type="checkbox"> OHLCV matrix</label>
   </div>
+  <h4 style="margin:14px 0 6px;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Indicators</h4>
+  <div class="grid2">
+    <label style="flex-direction:row;align-items:center;gap:6px"><input id="setShowVWAP" type="checkbox"> VWAP</label>
+    <label style="flex-direction:row;align-items:center;gap:6px"><input id="setShowCPR" type="checkbox"> CPR</label>
+  </div>
+  <div class="field"><label style="flex-direction:row;align-items:center;gap:6px"><input id="setShowSMA" type="checkbox"> SMA period <input id="setSmaPeriod" type="number" min="2" max="200" style="width:56px;margin-left:4px"></label></div>
+  <div class="field"><label style="flex-direction:row;align-items:center;gap:6px"><input id="setShowEMA" type="checkbox"> EMA period <input id="setEmaPeriod" type="number" min="2" max="200" style="width:56px;margin-left:4px"></label></div>
   <button id="btnResetSettings" class="warn wide">Reset to defaults</button>
 </div></div>
 

@@ -104,7 +104,7 @@
   // ---- Panel tabs ----------------------------------------------------------------------------
   function bindPanel() {
     var tabs = document.querySelectorAll('.tab'), panel = $('panel');
-    if (S.get('panelCollapsed', false)) panel.classList.add('collapsed');
+    if (S.get('panelCollapsed', true)) panel.classList.add('collapsed');
     tabs.forEach(function (t) {
       t.addEventListener('click', function () {
         var wasActive = t.classList.contains('active');
@@ -279,6 +279,12 @@
     $('setShowVA').checked = s.showVA !== false;
     $('setShowCVD').checked = s.showCVD !== false;
     $('setShowMatrix').checked = s.showMatrix !== false;
+    $('setShowVWAP').checked = !!s.showVWAP;
+    $('setShowSMA').checked = !!s.showSMA;
+    $('setSmaPeriod').value = s.smaPeriod != null ? s.smaPeriod : 20;
+    $('setShowEMA').checked = !!s.showEMA;
+    $('setEmaPeriod').value = s.emaPeriod != null ? s.emaPeriod : 9;
+    $('setShowCPR').checked = !!s.showCPR;
   }
   UI.openSettings = function () { fillSettings(); open('mSettings'); };
 
@@ -311,6 +317,12 @@
     $('setShowVA').addEventListener('change', function (e) { app.updateSettings({ showVA: e.target.checked }); });
     $('setShowCVD').addEventListener('change', function (e) { app.updateSettings({ showCVD: e.target.checked }); setTimeout(function () { app.renderer.resize(); }, 0); });
     $('setShowMatrix').addEventListener('change', function (e) { app.updateSettings({ showMatrix: e.target.checked }); setTimeout(function () { app.renderer.resize(); }, 0); });
+    $('setShowVWAP').addEventListener('change', function (e) { app.updateSettings({ showVWAP: e.target.checked }); });
+    $('setShowSMA').addEventListener('change', function (e) { app.updateSettings({ showSMA: e.target.checked }); });
+    $('setSmaPeriod').addEventListener('change', function (e) { app.updateSettings({ smaPeriod: Math.max(2, +e.target.value || 20) }); });
+    $('setShowEMA').addEventListener('change', function (e) { app.updateSettings({ showEMA: e.target.checked }); });
+    $('setEmaPeriod').addEventListener('change', function (e) { app.updateSettings({ emaPeriod: Math.max(2, +e.target.value || 9) }); });
+    $('setShowCPR').addEventListener('change', function (e) { app.updateSettings({ showCPR: e.target.checked }); });
     $('btnResetSettings').addEventListener('click', function () {
       app.resetSettings();
       fillSettings();
