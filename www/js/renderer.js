@@ -22,6 +22,14 @@
     this.mult = 1;
     this.imbalance = 3;
     this.shading = 'dark';
+    this.volFilter = 0;
+    this.stackedImb = 3;
+    this.showPOC = true;
+    this.showImb = true;
+    this.showProfile = true;
+    this.showVA = true;
+    this.showCVD = true;
+    this.showMatrix = true;
     this.view = { barW: 64, rowH: 16, offset: 0, center: null, follow: true };
     this.W = 0; this.H = 0; this.dpr = 1;
     this.raf = 0;
@@ -57,6 +65,14 @@
     if (o.mult) this.mult = o.mult;
     if (o.imbalance) this.imbalance = o.imbalance;
     if (o.shading && o.shading !== this.shading) { this.shading = o.shading; this._shadeCache = {}; }
+    if (o.volFilter != null) this.volFilter = +o.volFilter || 0;
+    if (o.stackedImb != null) this.stackedImb = +o.stackedImb || 0;
+    if (o.showPOC != null) this.showPOC = !!o.showPOC;
+    if (o.showImb != null) this.showImb = !!o.showImb;
+    if (o.showProfile != null) this.showProfile = !!o.showProfile;
+    if (o.showVA != null) this.showVA = !!o.showVA;
+    if (o.showCVD != null) this.showCVD = !!o.showCVD;
+    if (o.showMatrix != null) this.showMatrix = !!o.showMatrix;
     this.markDirty();
   };
 
@@ -104,8 +120,11 @@
   // ---- Geometry ------------------------------------------------------------------------------
   P._layout = function () {
     var W = this.W, H = this.H, narrow = W < 460;
-    var axisW = narrow ? 58 : 68, bookW = narrow ? 28 : 44, profW = W < 340 ? 0 : narrow ? 40 : 70;
-    var timeH = 16, mRow = H < 260 ? 0 : 13, cvdH = H < 380 ? 0 : 34;
+    var axisW = narrow ? 58 : 68, bookW = narrow ? 28 : 44;
+    var profW = (!this.showProfile || W < 340) ? 0 : narrow ? 40 : 70;
+    var timeH = 16;
+    var mRow = (!this.showMatrix || H < 260) ? 0 : 13;
+    var cvdH = (!this.showCVD || !mRow || H < 380) ? 0 : 34;
     var matrixH = mRow ? mRow * MATRIX_ROWS.length + cvdH : 0;
     var chartW = Math.max(40, W - axisW - bookW - profW), chartH = Math.max(40, H - timeH - matrixH);
     return {
@@ -188,7 +207,7 @@
 
   P._valueArea = function (L, S) {
     var pr = S.prof, ctx = this.ctx;
-    if (pr.vah == null) return;
+    if (!this.showVA || pr.vah == null) return;
     ctx.save();
     ctx.setLineDash([4, 4]);
     ctx.strokeStyle = 'rgba(148,163,184,0.35)';
@@ -232,7 +251,7 @@
   };
 
   P._cluster = function (bar, left, w, S, L, font, charW) {
-    var ctx = this.ctx, vw = this.engine.barView(bar, this.mult, this.imbalance);
+    var ctx = this.ctx, vw = this.engine.barView(bar, this.mult, this.imbalance, this.volFilter, this.stackedImb);
     var candleW = w >= 36 ? 4 : Math.max(1, Math.floor(w * 0.18));
     this._miniCandle(bar, left, candleW, S);
     var cx = left + candleW + 1, cw = w - candleW - 1;
@@ -240,15 +259,24 @@
     var rowH = this.view.rowH, hh = Math.max(1, rowH >= 6 ? rowH - 1 : rowH);
     var showText = rowH >= 9;
     var mode = this.mode, mid = cx + cw / 2;
+    var showImb = this.showImb;
     for (var j = 0; j < vw.keys.length; j++) {
       var k = vw.keys[j], c = vw.cells.get(k), yTop = S.yOf((k + 1) * S.bin);
       if (yTop > L.chartH || yTop + rowH < 0) continue;
+      // Stacked imbalance background highlight.
+      var st = vw.stacked.get(k);
+      if (st) {
+        ctx.fillStyle = st === 'buy' ? 'rgba(6,182,212,0.18)' : 'rgba(217,70,239,0.18)';
+        ctx.fillRect(cx, yTop, cw, hh);
+      }
       var sh = this.shade(c.ask - c.bid, vw.maxAbsDelta);
       ctx.fillStyle = sh.fill;
       ctx.fillRect(cx, yTop, cw, hh);
       var im = vw.imb.get(k);
-      if (im === 'buy' || im === 'both') { ctx.fillStyle = IMB_BUY; ctx.fillRect(cx + cw - 2, yTop, 2, hh); }
-      if (im === 'sell' || im === 'both') { ctx.fillStyle = IMB_SELL; ctx.fillRect(cx, yTop, 2, hh); }
+      if (showImb) {
+        if (im === 'buy' || im === 'both') { ctx.fillStyle = IMB_BUY; ctx.fillRect(cx + cw - 2, yTop, 2, hh); }
+        if (im === 'sell' || im === 'both') { ctx.fillStyle = IMB_SELL; ctx.fillRect(cx, yTop, 2, hh); }
+      }
       if (!showText) continue;
       var ty = yTop + hh / 2 + 0.5;
       if (mode === 'bidask') {
@@ -256,23 +284,29 @@
         if (Math.max(lt.length, rt.length) * charW * 2 + 10 > cw) continue;
         ctx.fillStyle = sh.text;
         ctx.textAlign = 'right';
-        if (im === 'sell' || im === 'both') ctx.font = 'bold ' + font + 'px ' + MONO;
+        if (showImb && (im === 'sell' || im === 'both')) ctx.font = 'bold ' + font + 'px ' + MONO;
         ctx.fillText(lt, mid - 4, ty);
         ctx.font = font + 'px ' + MONO;
         ctx.textAlign = 'left';
-        if (im === 'buy' || im === 'both') ctx.font = 'bold ' + font + 'px ' + MONO;
+        if (showImb && (im === 'buy' || im === 'both')) ctx.font = 'bold ' + font + 'px ' + MONO;
         ctx.fillText(rt, mid + 4, ty);
         ctx.font = font + 'px ' + MONO;
         if (cw > (lt.length + rt.length + 1) * charW + 14) { ctx.textAlign = 'center'; ctx.fillText('×', mid, ty); }
       } else {
-        var txt = mode === 'delta' ? (c.ask - c.bid > 0 ? '+' : '') + U.fmtQty(c.ask - c.bid) : U.fmtQty(c.bid + c.ask);
+        var delta = c.ask - c.bid, total = c.bid + c.ask;
+        var txt;
+        if (mode === 'delta') txt = (delta > 0 ? '+' : '') + U.fmtQty(delta);
+        else if (mode === 'delta%') txt = (delta > 0 ? '+' : '') + (total > 0 ? (delta / total * 100).toFixed(0) : '0') + '%';
+        else if (mode === 'bid') txt = U.fmtQty(c.bid);
+        else if (mode === 'ask') txt = U.fmtQty(c.ask);
+        else txt = U.fmtQty(total);
         if (txt.length * charW + 6 > cw) continue;
         ctx.fillStyle = sh.text;
         ctx.textAlign = 'center';
         ctx.fillText(txt, mid, ty);
       }
     }
-    if (vw.poc != null) {
+    if (this.showPOC && vw.poc != null) {
       var py = S.yOf((vw.poc + 1) * S.bin);
       ctx.strokeStyle = POC_COL; ctx.lineWidth = 1.5;
       ctx.strokeRect(cx + 0.75, py + 0.75, Math.max(1, cw - 1.5), Math.max(1, hh - 1.5));

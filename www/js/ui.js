@@ -270,6 +270,15 @@
     $('setImbVal').textContent = Number(s.imbalance).toFixed(1);
     $('setWhale').value = String(s.whaleUsd);
     $('setSound').checked = !!s.whaleSound;
+    $('setVolFilter').value = s.volFilter != null ? s.volFilter : 0;
+    $('setStackedImb').value = s.stackedImb != null ? s.stackedImb : 3;
+    $('setStackedImbVal').textContent = s.stackedImb != null ? s.stackedImb : 3;
+    $('setShowPOC').checked = s.showPOC !== false;
+    $('setShowImb').checked = s.showImb !== false;
+    $('setShowProfile').checked = s.showProfile !== false;
+    $('setShowVA').checked = s.showVA !== false;
+    $('setShowCVD').checked = s.showCVD !== false;
+    $('setShowMatrix').checked = s.showMatrix !== false;
   }
   UI.openSettings = function () { fillSettings(); open('mSettings'); };
 
@@ -291,6 +300,17 @@
       if (e.target.checked) { ensureAudio(); UI.ping(880); }
       app.updateSettings({ whaleSound: e.target.checked });
     });
+    $('setVolFilter').addEventListener('change', function (e) { app.updateSettings({ volFilter: Math.max(0, +e.target.value || 0) }); });
+    $('setStackedImb').addEventListener('input', function (e) {
+      $('setStackedImbVal').textContent = e.target.value;
+      app.updateSettings({ stackedImb: +e.target.value });
+    });
+    $('setShowPOC').addEventListener('change', function (e) { app.updateSettings({ showPOC: e.target.checked }); });
+    $('setShowImb').addEventListener('change', function (e) { app.updateSettings({ showImb: e.target.checked }); });
+    $('setShowProfile').addEventListener('change', function (e) { app.updateSettings({ showProfile: e.target.checked }); setTimeout(function () { app.renderer.resize(); }, 0); });
+    $('setShowVA').addEventListener('change', function (e) { app.updateSettings({ showVA: e.target.checked }); });
+    $('setShowCVD').addEventListener('change', function (e) { app.updateSettings({ showCVD: e.target.checked }); setTimeout(function () { app.renderer.resize(); }, 0); });
+    $('setShowMatrix').addEventListener('change', function (e) { app.updateSettings({ showMatrix: e.target.checked }); setTimeout(function () { app.renderer.resize(); }, 0); });
     $('btnResetSettings').addEventListener('click', function () {
       app.resetSettings();
       fillSettings();

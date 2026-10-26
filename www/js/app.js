@@ -38,7 +38,10 @@
     var s = app.settings, r = app.renderer;
     if (!app.monet.isPro && C.PRO_MULTIPLIERS.indexOf(s.mult) >= 0) s.mult = 1;
     r.setColors(s.bull, s.bear);
-    r.setOptions({ mode: s.mode, mult: s.mult, imbalance: s.imbalance, shading: s.shading });
+    r.setOptions({ mode: s.mode, mult: s.mult, imbalance: s.imbalance, shading: s.shading,
+      volFilter: s.volFilter, stackedImb: s.stackedImb,
+      showPOC: s.showPOC, showImb: s.showImb, showProfile: s.showProfile,
+      showVA: s.showVA, showCVD: s.showCVD, showMatrix: s.showMatrix });
   }
 
   function configureEngine() {

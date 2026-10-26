@@ -40,7 +40,7 @@
     BYBIT_INTERVAL: { '1m': '1', '3m': '3', '5m': '5', '15m': '15' },
     BIN_MULTIPLIERS: [1, 2, 5, 10, 25],
     PRO_MULTIPLIERS: [10, 25],
-    CLUSTER_MODES: { bidask: 'Bid × Ask', delta: 'Delta', volume: 'Volume' },
+    CLUSTER_MODES: { bidask: 'Bid × Ask', delta: 'Delta', 'delta%': 'Delta %', volume: 'Volume', bid: 'Bid', ask: 'Ask' },
     MAX_BARS: 300,
     KLINE_LIMIT: 100,
     SEED_BARS: 20,
@@ -112,7 +112,16 @@
       mode: 'bidask',
       mult: 1,
       symbol: 'BTCUSDT',
-      tf: '1m'
+      tf: '1m',
+      // ---- Cluster settings ---------------------------------------------------------------
+      volFilter: 0,       // hide cells whose total volume is below this (0 = show all)
+      stackedImb: 3,      // highlight N+ consecutive same-direction imbalances (0 = off)
+      showPOC: true,      // draw the POC outline on each bar
+      showImb: true,      // draw diagonal imbalance markers
+      showProfile: true,  // show the session volume profile panel
+      showVA: true,       // draw VAH/VAL dashed lines
+      showCVD: true,      // show cumulative volume delta strip
+      showMatrix: true    // show the bottom OHLCV matrix rows
     },
 
     AFFILIATES: [

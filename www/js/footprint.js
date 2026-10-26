@@ -208,10 +208,11 @@
   }
 
   // ---- Views ---------------------------------------------------------------------------------
-  // Aggregated cells for a bar at multiplier `mult` with POC and diagonal imbalances (ratio R).
-  P.barView = function (bar, mult, R) {
+  // Aggregated cells for a bar at multiplier `mult` with POC, diagonal imbalances (ratio R),
+  // optional volume filter `vf` (hide cells below threshold) and stacked-imbalance count `si`.
+  P.barView = function (bar, mult, R, vf, si) {
     var vw = bar.view;
-    if (vw && vw.ver === bar.ver && vw.mult === mult && vw.R === R && vw.lot === this.lot) return vw;
+    if (vw && vw.ver === bar.ver && vw.mult === mult && vw.R === R && vw.lot === this.lot && vw.vf === vf && vw.si === si) return vw;
     var cells = new Map();
     bar.clusters.forEach(function (c, k) {
       var ak = Math.floor(k / mult);
@@ -220,6 +221,10 @@
       a.bid += c.bid;
       a.ask += c.ask;
     });
+    // Apply volume filter after aggregation.
+    if (vf > 0) {
+      cells.forEach(function (_c, k) { if ((_c.bid + _c.ask) < vf) cells.delete(k); });
+    }
     var keys = Array.from(cells.keys()).sort(function (a, b) { return b - a; });
     var poc = null, maxV = 0, maxAbs = 0, imb = new Map(), lot = this.lot;
     for (var i = 0; i < keys.length; i++) {
@@ -227,15 +232,36 @@
       if (v > maxV) { maxV = v; poc = k; }
       if (d > maxAbs) maxAbs = d;
       var below = cells.get(k - 1), above = cells.get(k + 1);
-      // Buy imbalance: ask[p] >= R * bid[p - 1 bin]; Sell: bid[p] >= R * ask[p + 1 bin].
+      // Buy imbalance: ask[p] >= R * bid[p-1 bin]; Sell: bid[p] >= R * ask[p+1 bin].
       var buy = c.ask > 0 && c.ask >= R * Math.max(below ? below.bid : 0, lot);
       var sell = c.bid > 0 && c.bid >= R * Math.max(above ? above.ask : 0, lot);
       if (buy || sell) imb.set(k, buy && sell ? 'both' : buy ? 'buy' : 'sell');
     }
-    vw = { ver: bar.ver, mult: mult, R: R, lot: lot, cells: cells, keys: keys, poc: poc, maxV: maxV, maxAbsDelta: maxAbs, imb: imb };
+    // Stacked imbalances: mark keys that belong to a run of si+ consecutive same-direction imbalances.
+    var stacked = _computeStacked(keys, imb, si);
+    vw = { ver: bar.ver, mult: mult, R: R, lot: lot, vf: vf, si: si, cells: cells, keys: keys, poc: poc, maxV: maxV, maxAbsDelta: maxAbs, imb: imb, stacked: stacked };
     bar.view = vw;
     return vw;
   };
+
+  function _computeStacked(keys, imb, n) {
+    var out = new Map();
+    if (!(n >= 2)) return out;
+    var run = [], runDir = null;
+    function flush() {
+      if (run.length >= n) run.forEach(function (k) { out.set(k, runDir); });
+      run = []; runDir = null;
+    }
+    for (var i = 0; i < keys.length; i++) {
+      var d = imb.get(keys[i]);
+      var dir = (d === 'buy' || d === 'both') ? 'buy' : (d === 'sell' ? 'sell' : null);
+      if (!dir) { flush(); continue; }
+      if (dir !== runDir) { flush(); runDir = dir; }
+      run.push(keys[i]);
+    }
+    flush();
+    return out;
+  }
 
   // Session volume profile over all bars with footprint data. VA via the standard method:
   // start at the POC and repeatedly add the larger of the next two rows above / below until 70%.
