@@ -107,6 +107,34 @@ body.compact #demoBanner { top: 30px; }
 #toast.show { opacity: 1; }
 textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); border: 1px solid var(--border); border-radius: 6px; font: 11px ui-monospace, monospace; }
 .mock-full { text-align: center; padding: 30px 10px; font-size: 15px; }
+
+/* Watchlist strip */
+#watchStrip { flex: 0 0 auto; display: flex; gap: 5px; align-items: center; padding: 2px 8px;
+  overflow-x: auto; background: #0d1420; border-bottom: 1px solid var(--border);
+  scrollbar-width: none; white-space: nowrap; height: 26px; }
+#watchStrip::-webkit-scrollbar { display: none; }
+.wchip { flex: 0 0 auto; background: transparent; border: 1px solid #1e2d42; border-radius: 4px;
+  padding: 0 5px; font-size: 10px; cursor: pointer; font-variant-numeric: tabular-nums;
+  color: var(--muted); height: 20px; line-height: 20px; }
+.wchip.active { border-color: var(--accent); color: var(--text); }
+.wchip .wprice { margin-left: 4px; font-weight: 700; color: var(--text); }
+
+/* Study / replay overlay */
+#studyOverlay { position: absolute; bottom: 0; left: 0; right: 0; z-index: 5;
+  background: rgba(11,15,23,0.92); border-top: 1px solid var(--border);
+  padding: 5px 8px; display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; }
+#studyOverlay button { padding: 0 7px; height: 24px; font-size: 13px; flex: 0 0 auto; }
+#studySlider { flex: 1 1 0; min-width: 40px; accent-color: var(--accent); }
+#studyInfo { font-size: 10px; color: var(--muted); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.study-badge { background: #1e3a2e; border: 1px solid #10b981; color: #10b981;
+  border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700; }
+
+/* Alert pane */
+.alert-row { display: flex; justify-content: space-between; align-items: center; gap: 6px;
+  padding: 4px 0; border-bottom: 1px solid #1c2534; font-size: 11px; font-variant-numeric: tabular-nums; }
+.alert-row .a-price { font-weight: 700; }
+.alert-row .a-trig { color: var(--bull); font-size: 10px; }
+.alert-row button { padding: 0 6px; height: 20px; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -118,6 +146,7 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
     <select id="selBin" aria-label="Bin size"></select>
     <select id="selMode" aria-label="Cluster mode"></select>
     <button id="btnRotate" title="Rotate (long-press to unlock)">🔄</button>
+    <button id="btnStudy" title="Study / Replay">📼</button>
     <button id="btnSettings" title="Settings">⚙️</button>
     <button id="btnPro">⭐ Pro</button>
     <button id="btnAbout" title="About">ℹ️</button>
@@ -127,16 +156,29 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
     <span id="lastPrice">—</span>
     <span class="simtag">Paper trading · Simulated — no real money</span>
   </div>
+  <div id="watchStrip"></div>
   <main id="main">
     <section id="chartWrap">
       <canvas id="chart"></canvas>
       <div id="demoBanner">Demo data — loading live market…</div>
+      <div id="studyOverlay" class="hidden">
+        <span class="study-badge">REPLAY</span>
+        <button id="studyBack5" title="−5 bars">⏮</button>
+        <button id="studyBack1" title="−1 bar">◀</button>
+        <button id="studyPlayPause" title="Play/Pause">▶</button>
+        <button id="studyFwd1" title="+1 bar">▶</button>
+        <button id="studyFwd5" title="+5 bars">⏭</button>
+        <input id="studySlider" type="range" min="0" max="1000" value="0">
+        <span id="studyInfo">—</span>
+        <button id="studyStop" title="Stop replay">✕</button>
+      </div>
     </section>
     <aside id="panel">
       <div class="tabs">
         <button class="tab active" data-pane="paneTrade">Trade</button>
         <button class="tab" data-pane="paneStats">Stats</button>
         <button class="tab" data-pane="paneWhales">Whales</button>
+        <button class="tab" data-pane="paneAlerts">Alerts</button>
       </div>
       <div class="pane" id="paneTrade">
         <div class="simlabel">⚠ Simulated — no real money</div>
@@ -179,6 +221,14 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
       <div class="pane hidden" id="paneWhales">
         <div id="whaleInfo" class="small muted"></div>
         <div id="whaleList"></div>
+      </div>
+      <div class="pane hidden" id="paneAlerts">
+        <div class="row" style="margin-bottom:6px">
+          <input id="alertPrice" type="number" inputmode="decimal" step="any" placeholder="Alert price" style="flex:1">
+          <button id="btnAddAlert" style="margin-left:6px">+ Add</button>
+        </div>
+        <div class="small muted" style="margin-bottom:6px" id="alertSymLabel"></div>
+        <div id="alertList"></div>
       </div>
     </aside>
   </main>
@@ -261,6 +311,8 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
 <script defer src="js/footprint.js"></script>
 <script defer src="js/renderer.js"></script>
 <script defer src="js/paper.js"></script>
+<script defer src="js/alerts.js"></script>
+<script defer src="js/study.js"></script>
 <script defer src="js/monetization.js"></script>
 <script defer src="js/ui.js"></script>
 <script defer src="js/app.js"></script>

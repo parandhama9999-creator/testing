@@ -17,12 +17,15 @@
     app = theApp;
     buildSelects();
     bindTopbar();
+    buildWatchStrip();
     bindPanel();
     bindTrade();
     bindSettings();
     bindPaywall();
     bindModals();
     bindRotate();
+    bindStudy();
+    bindAlerts();
     $('aboutVersion').textContent = 'v' + C.VERSION;
     $('privacyLink').href = C.PRIVACY_POLICY_URL;
     $('affiliates').innerHTML = app.monet.affiliateHTML();
@@ -66,7 +69,7 @@
   };
 
   function bindTopbar() {
-    $('selSymbol').addEventListener('change', function (e) { app.setSymbol(e.target.value); UI.buildBinSelect(); });
+    $('selSymbol').addEventListener('change', function (e) { app.setSymbol(e.target.value); UI.buildBinSelect(); UI.setActiveSymbol(e.target.value); });
     $('selTf').addEventListener('change', function (e) { app.setTf(e.target.value); });
     $('selMode').addEventListener('change', function (e) { app.setMode(e.target.value); });
     $('selBin').addEventListener('change', function (e) {
@@ -94,6 +97,8 @@
     var el = $('lastPrice');
     el.textContent = price ? U.fmtPrice(price, dec) : '—';
     el.className = up == null ? '' : up ? 'pos-txt' : 'neg-txt';
+    var ps = $('wprice-' + (app && app.state ? app.state.symbol : ''));
+    if (ps && price) ps.textContent = U.fmtPrice(price, dec);
   };
   UI.showDemo = function (on, text) {
     var el = $('demoBanner');
@@ -113,6 +118,7 @@
         tabs.forEach(function (x) { x.classList.toggle('active', x === t); $(x.dataset.pane).classList.toggle('hidden', x !== t); });
         S.set('panelCollapsed', panel.classList.contains('collapsed'));
         if (t.dataset.pane === 'paneWhales') renderWhaleInfo();
+        if (t.dataset.pane === 'paneAlerts') UI.renderAlerts(app.state.symbol);
         setTimeout(function () { app.renderer.resize(); }, 0);
       });
     });
@@ -470,6 +476,104 @@
     var landscape = window.innerWidth > window.innerHeight && window.innerHeight <= 600;
     document.body.classList.toggle('compact', forcedCompact || landscape);
     if (app && app.renderer) app.renderer.resize();
+  };
+
+  // ---- Watchlist strip -----------------------------------------------------------------------
+  function buildWatchStrip() {
+    var strip = $('watchStrip');
+    strip.innerHTML = '';
+    C.SYMBOLS.forEach(function (sym) {
+      var chip = document.createElement('button');
+      chip.className = 'wchip' + (sym === app.state.symbol ? ' active' : '');
+      chip.id = 'wchip-' + sym;
+      chip.innerHTML = sym.replace('USDT', '') + '<span class="wprice" id="wprice-' + sym + '">—</span>';
+      chip.addEventListener('click', function () {
+        $('selSymbol').value = sym;
+        $('selSymbol').dispatchEvent(new Event('change'));
+        UI.setActiveSymbol(sym);
+      });
+      strip.appendChild(chip);
+    });
+  }
+
+  UI.setActiveSymbol = function (sym) {
+    document.querySelectorAll('.wchip').forEach(function (c) {
+      c.classList.toggle('active', c.id === 'wchip-' + sym);
+    });
+  };
+
+  UI.updateWatchStrip = function () {
+    C.SYMBOLS.forEach(function (sym) {
+      var ps = $('wprice-' + sym);
+      if (!ps) return;
+      var meta = U.symbolMeta(sym, app.state.liveMeta);
+      if (app.state.prices[sym]) ps.textContent = U.fmtPrice(app.state.prices[sym], meta.dec);
+    });
+  };
+
+  // ---- Study / replay controls ---------------------------------------------------------------
+  function bindStudy() {
+    $('btnStudy').addEventListener('click', function () { app.startStudy(); });
+    $('studyBack5').addEventListener('click', function () { if (app.study) app.study.step(-5); });
+    $('studyBack1').addEventListener('click', function () { if (app.study) app.study.step(-1); });
+    $('studyPlayPause').addEventListener('click', function () {
+      if (!app.study) return;
+      if (app.study.playing) app.study.pause(); else app.study.play();
+      $('studyPlayPause').textContent = app.study.playing ? '⏸' : '▶';
+    });
+    $('studyFwd1').addEventListener('click', function () { if (app.study) app.study.step(1); });
+    $('studyFwd5').addEventListener('click', function () { if (app.study) app.study.step(5); });
+    $('studyStop').addEventListener('click', function () { app.stopStudy(); });
+    $('studySlider').addEventListener('input', function (e) {
+      if (app.study) app.study.seek(+e.target.value / 1000);
+    });
+  }
+
+  UI.onStudyChange = function (idx, total, price, timeMs) {
+    if (idx < 0) { $('studyInfo').textContent = '—'; $('studyPlayPause').textContent = '▶'; return; }
+    $('studySlider').value = total > 1 ? Math.round(idx / (total - 1) * 1000) : 1000;
+    var pStr = price != null ? U.fmtPrice(price, app.meta().dec) : '—';
+    var tStr = timeMs ? U.fmtTime(timeMs) : '—';
+    $('studyInfo').textContent = tStr + '  ' + pStr + '  ' + (idx + 1) + '/' + total;
+    $('studyPlayPause').textContent = app.study && app.study.playing ? '⏸' : '▶';
+  };
+
+  UI.showStudyOverlay = function (on) {
+    $('studyOverlay').classList.toggle('hidden', !on);
+    setTimeout(function () { app.renderer.resize(); }, 0);
+  };
+
+  // ---- Alerts pane ---------------------------------------------------------------------------
+  function bindAlerts() {
+    $('btnAddAlert').addEventListener('click', function () {
+      var price = parseFloat($('alertPrice').value);
+      if (!price || isNaN(price)) { UI.toast('Enter a valid price'); return; }
+      var r = app.alerts.add(app.state.symbol, price);
+      if (r.ok) {
+        $('alertPrice').value = '';
+        UI.renderAlerts(app.state.symbol);
+        UI.toast('Alert set @ ' + U.fmtPrice(price, app.meta().dec));
+      } else {
+        UI.toast(r.msg);
+      }
+    });
+  }
+
+  UI.renderAlerts = function (sym) {
+    var el = $('alertList'), sl = $('alertSymLabel');
+    if (sl) sl.textContent = 'Alerts for ' + (sym || '—');
+    if (!el || !app || !app.alerts) return;
+    var list = app.alerts.list(sym);
+    if (!list.length) { el.innerHTML = '<div class="small muted">No alerts for ' + (sym || '—') + '.</div>'; return; }
+    var meta = app.meta();
+    el.innerHTML = list.map(function (a) {
+      var eid = a.id.replace(/'/g, '');
+      return '<div class="alert-row">' +
+        '<span class="a-price">' + U.fmtPrice(a.price, meta.dec) + '</span>' +
+        (a.triggered ? '<span class="a-trig">✓ triggered</span>' : '<span></span>') +
+        '<button onclick="OF.app.alerts.remove(\'' + sym.replace(/'/g, '') + '\',\'' + eid + '\');OF.ui.renderAlerts(\'' + sym.replace(/'/g, '') + '\')">✕</button>' +
+        '</div>';
+    }).join('');
   };
 
   function bindRotate() {

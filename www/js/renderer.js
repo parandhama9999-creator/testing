@@ -9,6 +9,7 @@
   var BG = '#0b0f17', BG_RGB = U.hexToRgb(BG), PANEL = '#0f1520', GRID = 'rgba(148,163,184,0.07)';
   var MUTED = '#94a3b8', POC_COL = '#f59e0b', IMB_BUY = '#06b6d4', IMB_SELL = '#d946ef';
   var MONO = 'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
+  var ABSORPTION_VOL_MULT = 3.0, ABSORPTION_SIDE_RATIO = 0.85;
   var MATRIX_ROWS = ['Volume', 'Delta', 'Delta %', 'Min Δ', 'Max Δ'];
 
   function Renderer(canvas) {
@@ -273,6 +274,12 @@
     var showText = rowH >= 9;
     var mode = this.mode, mid = cx + cw / 2;
     var showImb = this.showImb;
+    var avgCellVol = 0;
+    if (vw.keys.length) {
+      var totalCellVol = 0;
+      for (var jj = 0; jj < vw.keys.length; jj++) { var cjj = vw.cells.get(vw.keys[jj]); if (cjj) totalCellVol += cjj.bid + cjj.ask; }
+      avgCellVol = totalCellVol / vw.keys.length;
+    }
     for (var j = 0; j < vw.keys.length; j++) {
       var k = vw.keys[j], c = vw.cells.get(k), yTop = S.yOf((k + 1) * S.bin);
       if (yTop > L.chartH || yTop + rowH < 0) continue;
@@ -289,6 +296,18 @@
       if (showImb) {
         if (im === 'buy' || im === 'both') { ctx.fillStyle = IMB_BUY; ctx.fillRect(cx + cw - 2, yTop, 2, hh); }
         if (im === 'sell' || im === 'both') { ctx.fillStyle = IMB_SELL; ctx.fillRect(cx, yTop, 2, hh); }
+      }
+      // Absorption marker: high-vol cell skewed to one side.
+      var cellVol = c.bid + c.ask;
+      if (avgCellVol > 0 && cellVol > avgCellVol * ABSORPTION_VOL_MULT) {
+        var bidRatio = cellVol > 0 ? c.bid / cellVol : 0, askRatio = cellVol > 0 ? c.ask / cellVol : 0;
+        if (bidRatio >= ABSORPTION_SIDE_RATIO) {
+          ctx.fillStyle = 'rgba(239,68,68,0.85)';
+          ctx.fillRect(cx, yTop, 4, hh);
+        } else if (askRatio >= ABSORPTION_SIDE_RATIO) {
+          ctx.fillStyle = 'rgba(16,185,129,0.85)';
+          ctx.fillRect(cx + cw - 4, yTop, 4, hh);
+        }
       }
       if (!showText) continue;
       var ty = yTop + hh / 2 + 0.5;
@@ -615,13 +634,20 @@
     ctx.fillStyle = '#e2e8f0'; ctx.fillRect(x - 22, L.timeY, 44, L.timeH);
     ctx.fillStyle = '#000'; ctx.font = '10px ' + MONO; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(tl, x, L.timeY + L.timeH / 2 + 0.5);
+    var vwC = bar.hasFP ? e.barView(bar, this.mult, this.imbalance, this.volFilter, this.stackedImb) : null;
+    var pocStr = vwC && vwC.poc != null ? '  POC ' + U.fmtPrice((vwC.poc + 0.5) * S.bin, S.dec) : '';
+    var dPct = bar.deltaKnown && bar.v > 0 ? (bar.delta / bar.v * 100).toFixed(1) + '%' : '';
     var info = 'O ' + U.fmtPrice(bar.o, S.dec) + ' H ' + U.fmtPrice(bar.h, S.dec) + ' L ' + U.fmtPrice(bar.l, S.dec) +
-      ' C ' + U.fmtPrice(bar.c, S.dec) + '  V ' + U.fmtQty(bar.v) + (bar.deltaKnown ? '  Δ ' + U.fmtQty(bar.delta) : '');
+      ' C ' + U.fmtPrice(bar.c, S.dec) + '  V ' + U.fmtQty(bar.v) +
+      (bar.deltaKnown ? '  Δ ' + U.fmtQty(bar.delta) + ' (' + dPct + ')' : '') + pocStr;
+    var info2 = bar.deltaKnown && bar.hasFP ? 'MinΔ ' + U.fmtQty(bar.minDelta) + '  MaxΔ ' + U.fmtQty(bar.maxDelta) : '';
     ctx.font = '10px ' + MONO;
     var tw = Math.min(L.chartW - 8, ctx.measureText(info).width + 10);
-    ctx.fillStyle = 'rgba(15,21,32,0.92)'; ctx.fillRect(4, 4, tw, 16);
+    var th = info2 ? 30 : 16;
+    ctx.fillStyle = 'rgba(15,21,32,0.92)'; ctx.fillRect(4, 4, tw, th);
     ctx.fillStyle = '#e2e8f0'; ctx.textAlign = 'left';
     ctx.fillText(info, 9, 12.5, tw - 8);
+    if (info2) ctx.fillText(info2, 9, 26.5, tw - 8);
   };
 
   // ---- Input ---------------------------------------------------------------------------------

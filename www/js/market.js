@@ -138,6 +138,17 @@
     return out;
   };
 
+  // Fetch current mark-price for all configured symbols at once (best-effort, no fallback).
+  P.fetchAllPrices = async function () {
+    var out = {};
+    try {
+      var syms = JSON.stringify(C.SYMBOLS);
+      var arr = await getJSON(C.ENDPOINTS.binance.rest + '/fapi/v1/ticker/price?symbols=' + encodeURIComponent(syms), 8000);
+      if (Array.isArray(arr)) arr.forEach(function (t) { if (t.symbol && t.price) out[t.symbol] = +t.price; });
+    } catch (e) { /* best-effort — config fallbacks stay in place */ }
+    return out;
+  };
+
   // Returns ascending [{t,o,h,l,c,v,takerBuy|null}]
   P.fetchKlines = function (sym, tf, limit) {
     return this._withFallback(async function (src) {

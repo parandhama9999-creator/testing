@@ -14,6 +14,8 @@
     market: null,
     paper: null,
     monet: null,
+    alerts: null,
+    study: null,
     state: {
       symbol: null, tf: null, loadToken: 0, buffering: false, buffer: [], hiddenAt: 0,
       lastPrice: null, lastTradeTs: 0, prices: {}, liveMeta: {}, retryTimer: 0, firstPaintMs: null
@@ -60,8 +62,26 @@
     updateLines();
   }
 
+  function saveBarsToCache() {
+    if (!app.engine || !app.engine.bars.length || app.engine.isSeed) return;
+    var key = 'barcache_' + st.symbol + '_' + st.tf;
+    var bars = app.engine.bars.slice(-C.BAR_CACHE_MAX);
+    var klines = bars.map(function (b) { return [b.t, b.o, b.h, b.l, b.c, b.v]; });
+    S.set(key, { ts: Date.now(), klines: klines });
+  }
+
+  function restoreBarsFromCache() {
+    var key = 'barcache_' + st.symbol + '_' + st.tf;
+    var cached = S.get(key, null);
+    if (!cached || !cached.ts || !cached.klines || !cached.klines.length) return false;
+    if (Date.now() - cached.ts > C.BAR_CACHE_TTL_MS) return false;
+    app.engine.loadKlines(cached.klines, 0);
+    return true;
+  }
+
   // ---- Market loading ------------------------------------------------------------------------
   app.loadMarket = async function (opts) {
+    if (app.study && app.study.active) return;
     var preserveBefore = (opts && opts.preserveBefore) || 0;
     var token = ++st.loadToken, sym = st.symbol, tf = st.tf, e = app.engine, mk = app.market;
     clearTimeout(st.retryTimer);
@@ -69,6 +89,7 @@
     st.buffering = true;
     st.buffer = [];
     OF.ui.setStatus('connecting', 'Loading ' + mk.label() + '…');
+    if (restoreBarsFromCache()) { OF.ui.showDemo(false); setLast(e.lastPrice); app.renderer.markDirty(); }
     var klines;
     try {
       klines = await mk.fetchKlines(sym, tf, C.KLINE_LIMIT);
@@ -116,13 +137,31 @@
     if (token !== st.loadToken) return; // late message from an old symbol/timeframe
     var sym = st.symbol;
     st.lastTradeTs = t.ts;
+    // Check price alerts before updating lastPrice.
+    if (app.alerts) {
+      var triggered = app.alerts.check(sym, t.price, st.lastPrice);
+      for (var ai = 0; ai < triggered.length; ai++) {
+        OF.ui.toast('⚡ Alert: ' + sym + ' @ ' + U.fmtPrice(triggered[ai].price, app.meta().dec));
+        OF.ui.renderAlerts(sym);
+      }
+    }
     setLast(t.price);
     var closed = app.paper.onPrice(sym, t.price); // SL/TP/liquidation on every tick
     if (closed) onClosed(closed);
     if (t.price * t.qty >= app.settings.whaleUsd) OF.ui.addWhale(t, app.meta().dec);
     if (st.buffering) { st.buffer.push(t); return; }
     var r = app.engine.applyTrade(t);
-    if (r.newBar) app.renderer.onNewBar();
+    if (r.newBar) {
+      app.renderer.onNewBar();
+      // Delta divergence: check the just-completed bar.
+      var bars = app.engine.bars;
+      var prevBar = bars.length >= 2 ? bars[bars.length - 2] : null;
+      if (prevBar && prevBar.deltaKnown && prevBar.v > 0 && Math.abs(prevBar.delta) / prevBar.v > 0.20) {
+        var bullCandle = prevBar.c >= prevBar.o;
+        if (bullCandle && prevBar.delta < 0) OF.ui.toast('↘ Bearish Δ divergence — ' + sym);
+        else if (!bullCandle && prevBar.delta > 0) OF.ui.toast('↗ Bullish Δ divergence — ' + sym);
+      }
+    }
     app.renderer.markDirty();
     OF.ui.renderPaper();
   }
@@ -231,6 +270,19 @@
 
   app.exportCSV = function () { OF.ui.showCSV(app.paper.exportCSV()); };
 
+  app.startStudy = function () {
+    if (!app.study) return;
+    app.study.start(st.symbol);
+    OF.ui.showStudyOverlay(true);
+  };
+
+  app.stopStudy = function () {
+    if (!app.study) return;
+    app.study.stop();
+    OF.ui.showStudyOverlay(false);
+    app.loadMarket({ preserveBefore: st.lastTradeTs });
+  };
+
   app.resetAccount = async function () {
     var yes = await OF.ui.confirm('Reset the simulated account to $100,000? All paper positions and history will be deleted.');
     if (!yes) return;
@@ -251,6 +303,12 @@
     app.engine = new OF.FootprintEngine();
     app.renderer = new OF.Renderer($('chart'));
     app.renderer.setEngine(app.engine);
+    app.alerts = new OF.AlertManager();
+    app.study = new OF.StudyEngine(app.engine, app.paper);
+    app.study.onChange = function (idx, total, price, timeMs) {
+      app.renderer.markDirty();
+      OF.ui.onStudyChange(idx, total, price, timeMs);
+    };
     applySettings();
     seedDemo();
     app.renderer.draw(); // first frame synchronously: demo bars visible immediately
@@ -297,6 +355,7 @@
 
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {
+        saveBarsToCache();
         st.hiddenAt = Date.now();
         st.loadToken++;
         clearTimeout(st.retryTimer);
@@ -307,6 +366,11 @@
       }
     });
     updateLines();
+
+    app.market.fetchAllPrices().then(function (prices) {
+      Object.assign(st.prices, prices);
+      OF.ui.updateWatchStrip();
+    }).catch(function () { /* best-effort */ });
   }
 
   init();
