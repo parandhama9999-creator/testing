@@ -271,6 +271,7 @@
     $('setPreset').value = s.preset;
     $('setBull').value = s.bull;
     $('setBear').value = s.bear;
+    $('setAppTheme').value = s.appTheme || 'dark';
     $('setShading').value = s.shading;
     $('setImb').value = s.imbalance;
     $('setImbVal').textContent = Number(s.imbalance).toFixed(1);
@@ -302,6 +303,7 @@
     });
     $('setBull').addEventListener('input', function (e) { app.updateSettings({ bull: e.target.value, preset: 'custom' }); $('setPreset').value = 'custom'; });
     $('setBear').addEventListener('input', function (e) { app.updateSettings({ bear: e.target.value, preset: 'custom' }); $('setPreset').value = 'custom'; });
+    $('setAppTheme').addEventListener('change', function (e) { app.setAppTheme(e.target.value); });
     $('setShading').addEventListener('change', function (e) { app.updateSettings({ shading: e.target.value }); });
     $('setImb').addEventListener('input', function (e) {
       $('setImbVal').textContent = Number(e.target.value).toFixed(1);

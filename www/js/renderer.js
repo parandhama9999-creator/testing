@@ -7,6 +7,7 @@
   'use strict';
   var OF = window.OF, U = OF.util;
   var BG = '#0b0f17', BG_RGB = U.hexToRgb(BG), PANEL = '#0f1520', GRID = 'rgba(148,163,184,0.07)';
+  var TOOLTIP_BG = 'rgba(15,21,32,0.92)', TOOLTIP_TEXT = '#e2e8f0', CROSS_COL = 'rgba(226,232,240,0.6)';
   var MUTED = '#94a3b8', POC_COL = '#f59e0b', IMB_BUY = '#06b6d4', IMB_SELL = '#d946ef';
   var MONO = 'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace';
   var ABSORPTION_VOL_MULT = 3.0, ABSORPTION_SIDE_RATIO = 0.85;
@@ -109,25 +110,52 @@
   P.onNewBar = function () { if (this.view.offset > 0.5) this.view.offset += 1; this.markDirty(); };
 
   // ---- Shading -------------------------------------------------------------------------------
-  // ratio = min(1, |cellDelta| / maxAbsDeltaInBar), quantised to 20 steps and cached.
+  // ratio = min(1, |cellDelta| / maxAbsDeltaInBar), quantised to 20 steps, cached per shading mode.
   P.shade = function (delta, maxAbs) {
     var ratio = maxAbs > 0 ? Math.min(1, Math.abs(delta) / maxAbs) : 0;
     var q = Math.round(ratio * 20), bull = delta >= 0;
-    var key = (bull ? 'b' : 's') + q;
+    var key = this.shading + (bull ? 'b' : 's') + q;
     var c = this._shadeCache[key];
     if (c) return c;
-    var base = bull ? this.bullHSL : this.bearHSL, r = q / 20, l, s, a;
-    if (this.shading === 'heat') { // Light-to-Dark heatmap: low = dark subtle tint, high = bright neon
+    var base = bull ? this.bullHSL : this.bearHSL, r = q / 20, l, s, a = 1, rgb, comp;
+    var mono = base.s < 0.15;
+    if (this.shading === 'dark') {
+      // Dark theme: weak cell → near-black, strong cell → vivid red/green
+      l = 0.06 + 0.36 * r;
+      s = mono ? base.s : Math.min(1, 0.65 + 0.35 * r);
+      rgb = U.hslToRgb(base.h, s, l);
+      comp = rgb;
+    } else if (this.shading === 'light') {
+      // Light theme: weak cell → near-white, strong cell → vivid red/green
+      l = 0.92 - 0.50 * r;
+      s = mono ? base.s : Math.min(1, 0.28 + 0.72 * r);
+      rgb = U.hslToRgb(base.h, s, l);
+      comp = rgb;
+    } else {
+      // heat: neon glow on dark background
       l = 0.14 + 0.46 * r; s = Math.min(1, 0.45 + 0.55 * r); a = 0.40 + 0.55 * r;
-    } else { // Dark-to-Light: high ratio -> L 25% / alpha .95, low -> L 65% / alpha .30
-      l = 0.65 - 0.40 * r; s = base.s; a = 0.30 + 0.65 * r;
+      rgb = U.hslToRgb(base.h, s, l);
+      comp = { r: rgb.r * a + BG_RGB.r * (1 - a), g: rgb.g * a + BG_RGB.g * (1 - a), b: rgb.b * a + BG_RGB.b * (1 - a) };
     }
-    if (base.s < 0.15) { s = base.s; l = U.clamp(l + (bull ? 0.15 : -0.12), 0.05, 0.95); } // monochrome presets
-    var rgb = U.hslToRgb(base.h, s, l);
-    var comp = { r: rgb.r * a + BG_RGB.r * (1 - a), g: rgb.g * a + BG_RGB.g * (1 - a), b: rgb.b * a + BG_RGB.b * (1 - a) };
     c = { fill: 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + a.toFixed(3) + ')', text: U.textOn(comp) };
     this._shadeCache[key] = c;
     return c;
+  };
+
+  P.setAppTheme = function (theme) {
+    if (theme === 'light') {
+      BG = '#f0f4f8'; BG_RGB = U.hexToRgb(BG);
+      PANEL = '#dde4ed'; GRID = 'rgba(30,41,59,0.09)';
+      TOOLTIP_BG = 'rgba(241,245,249,0.96)'; TOOLTIP_TEXT = '#0f172a';
+      CROSS_COL = 'rgba(30,41,59,0.55)';
+    } else {
+      BG = '#0b0f17'; BG_RGB = U.hexToRgb(BG);
+      PANEL = '#0f1520'; GRID = 'rgba(148,163,184,0.07)';
+      TOOLTIP_BG = 'rgba(15,21,32,0.92)'; TOOLTIP_TEXT = '#e2e8f0';
+      CROSS_COL = 'rgba(226,232,240,0.6)';
+    }
+    this._shadeCache = {};
+    this.markDirty();
   };
 
   // ---- Geometry ------------------------------------------------------------------------------
@@ -625,14 +653,15 @@
     if (!ch || ch.x > L.chartW || ch.y > L.chartH) return;
     var ctx = this.ctx, e = this.engine, idx = U.clamp(S.idxAt(ch.x), 0, S.n - 1), bar = e.bars[idx];
     ctx.save();
-    ctx.strokeStyle = 'rgba(226,232,240,0.6)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+    ctx.strokeStyle = CROSS_COL; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
     var x = Math.round(S.xOf(idx)) + 0.5, y = Math.round(ch.y) + 0.5;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, L.timeY); ctx.moveTo(0, y); ctx.lineTo(L.chartW, y); ctx.stroke();
     ctx.restore();
-    this._axisTag(L, y, U.fmtPrice(S.priceAt(ch.y), S.dec), '#e2e8f0');
+    this._axisTag(L, y, U.fmtPrice(S.priceAt(ch.y), S.dec), TOOLTIP_TEXT);
     var tl = U.fmtTime(bar.t);
-    ctx.fillStyle = '#e2e8f0'; ctx.fillRect(x - 22, L.timeY, 44, L.timeH);
-    ctx.fillStyle = '#000'; ctx.font = '10px ' + MONO; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = TOOLTIP_TEXT; ctx.fillRect(x - 22, L.timeY, 44, L.timeH);
+    ctx.fillStyle = U.textOn(U.hexToRgb(TOOLTIP_TEXT));
+    ctx.font = '10px ' + MONO; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(tl, x, L.timeY + L.timeH / 2 + 0.5);
     var vwC = bar.hasFP ? e.barView(bar, this.mult, this.imbalance, this.volFilter, this.stackedImb) : null;
     var pocStr = vwC && vwC.poc != null ? '  POC ' + U.fmtPrice((vwC.poc + 0.5) * S.bin, S.dec) : '';
@@ -644,8 +673,8 @@
     ctx.font = '10px ' + MONO;
     var tw = Math.min(L.chartW - 8, ctx.measureText(info).width + 10);
     var th = info2 ? 30 : 16;
-    ctx.fillStyle = 'rgba(15,21,32,0.92)'; ctx.fillRect(4, 4, tw, th);
-    ctx.fillStyle = '#e2e8f0'; ctx.textAlign = 'left';
+    ctx.fillStyle = TOOLTIP_BG; ctx.fillRect(4, 4, tw, th);
+    ctx.fillStyle = TOOLTIP_TEXT; ctx.textAlign = 'left';
     ctx.fillText(info, 9, 12.5, tw - 8);
     if (info2) ctx.fillText(info2, 9, 26.5, tw - 8);
   };

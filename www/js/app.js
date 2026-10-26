@@ -203,6 +203,13 @@
   app.setMult = function (m) { app.settings.mult = m; saveSettings(); applySettings(); };
   app.setMode = function (m) { app.settings.mode = m; saveSettings(); applySettings(); };
 
+  app.setAppTheme = function (theme) {
+    app.settings.appTheme = theme;
+    document.documentElement.dataset.theme = theme === 'light' ? 'light' : '';
+    app.renderer.setAppTheme(theme);
+    saveSettings();
+  };
+
   app.updateSettings = function (patch) {
     Object.assign(app.settings, patch);
     saveSettings();
@@ -310,6 +317,9 @@
       OF.ui.onStudyChange(idx, total, price, timeMs);
     };
     applySettings();
+    var initTheme = app.settings.appTheme || 'dark';
+    document.documentElement.dataset.theme = initTheme === 'light' ? 'light' : '';
+    app.renderer.setAppTheme(initTheme);
     seedDemo();
     app.renderer.draw(); // first frame synchronously: demo bars visible immediately
     st.firstPaintMs = performance.now() - t0;

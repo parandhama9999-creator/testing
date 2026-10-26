@@ -140,7 +140,8 @@
       preset: 'classic',
       bull: '#10b981',
       bear: '#ef4444',
-      shading: 'dark', // 'dark' = Dark-to-Light, 'heat' = Light-to-Dark heatmap
+      shading: 'dark', // 'dark' = vivid→black, 'light' = vivid→white, 'heat' = neon glow
+      appTheme: 'dark', // 'dark' | 'light'
       imbalance: 3.0,
       whaleUsd: 50000,
       whaleSound: false,
