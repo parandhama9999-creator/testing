@@ -11,13 +11,18 @@
     VERSION: '1.0.0',
 
     // ---- Feature flags -------------------------------------------------------------------
-    // Simulated purchases are honoured ONLY outside the native app (browser / preview).
-    // A native build always requires a real Google Play Billing purchase, whatever this says.
+    // RELEASE CHECKLIST — set to false before shipping any release build.
+    // Simulated purchases are honoured ONLY outside the native app (browser / preview);
+    // a native build always requires a real Google Play Billing purchase, whatever this says.
     DEBUG_MOCK_BILLING: true,
-    // Affiliate cards (Binance/Bybit). Review Google Play's financial-services policy and the
-    // exchanges' country restrictions before enabling.
+    // Affiliate cards (Binance/Bybit). ENABLE_AFFILIATES must stay false unless you have:
+    //   (a) reviewed Google Play's Financial Services policy for your target countries, AND
+    //   (b) confirmed neither exchange is restricted/unlicensed there (e.g. US, UK, Ontario CA).
+    //   Geo-gate the cards or geo-restrict the app listing before enabling.
     ENABLE_AFFILIATES: false,
-    PRIVACY_POLICY_URL: 'https://example.com/orderflow-crypto-pro/privacy', // placeholder URL: replace with your hosted policy before release
+    // RELEASE CHECKLIST — replace with your hosted privacy-policy URL before submitting to Play.
+    // Play Console will reject the app if this is still example.com.
+    PRIVACY_POLICY_URL: 'https://example.com/orderflow-crypto-pro/privacy',
 
     // ---- Market --------------------------------------------------------------------------
     SYMBOLS: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT'],

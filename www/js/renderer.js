@@ -615,7 +615,7 @@
       }
     });
     var end = function (ev) {
-      var p = self._pos(ev), d = self.drag;
+      var d = self.drag;
       self.ptrs.delete(ev.pointerId);
       clearTimeout(self.lpTimer);
       if (self.pinch) { if (self.ptrs.size < 2) self.pinch = null; self.drag = null; return; }

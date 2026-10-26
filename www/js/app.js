@@ -67,10 +67,12 @@
     var klines;
     try {
       klines = await mk.fetchKlines(sym, tf, C.KLINE_LIMIT);
+      st.wasOffline = false;
     } catch (err) {
       if (token !== st.loadToken) return;
       console.warn('[app] klines failed:', err.message);
       OF.ui.setStatus('offline', 'Offline — retrying…');
+      if (!st.wasOffline) { st.wasOffline = true; OF.ui.toast('No market data — check your connection'); }
       if (e.isSeed) OF.ui.showDemo(true, 'Demo data — live market unavailable, retrying…');
       st.retryTimer = setTimeout(function () { if (token === st.loadToken) app.loadMarket(opts); }, 5000);
       return;

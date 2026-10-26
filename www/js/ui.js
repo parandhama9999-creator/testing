@@ -312,7 +312,7 @@
       row.innerHTML = '<div><b>' + p.label + '</b><div class="small muted">' +
         (p.type === 'subscription' ? 'Auto-renewing subscription' : 'One-time purchase') + '</div></div>';
       btn.textContent = m.isPro && m.ent.productId === p.id ? 'Owned' : m.priceLabel(p.id);
-      btn.disabled = m.isPro || (!m.native && !m.mockAllowed);
+      btn.disabled = m.isPro || (!m.native && !m.mockAllowed) || (m.native && !m.storeReady);
       btn.addEventListener('click', async function () {
         $('payStatus').textContent = 'Working…';
         var r = await m.buy(p.id);
@@ -323,7 +323,8 @@
       list.appendChild(row);
     });
     $('btnRevokeMock').classList.toggle('hidden', !(m.ent.source === 'mock' && m.isPro));
-    if (!m.native) $('payStatus').textContent = m.mockAllowed ? 'Browser preview: purchases are simulated (debug only).' : 'Purchases are available in the Android app.';
+    if (m.native && !m.storeReady) $('payStatus').textContent = 'Loading prices from Google Play…';
+    else if (!m.native) $('payStatus').textContent = m.mockAllowed ? 'Browser preview: purchases are simulated (debug only).' : 'Purchases are available in the Android app.';
   };
 
   function bindPaywall() {

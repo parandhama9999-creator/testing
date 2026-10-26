@@ -163,7 +163,7 @@
     for (i = 0; i < trades.length; i++) {
       var tr = trades[i];
       if (tr.ts < startTs) continue;
-      if (tr.ts > firstLiveTs || liveIds.has(tr.id)) continue;
+      if (tr.ts >= firstLiveTs || liveIds.has(tr.id)) continue;
       this.applyTrade(tr);
     }
     for (i = 0; i < buffered.length; i++) this.applyTrade(buffered[i]);
