@@ -24,8 +24,13 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licences and install build tools
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
       - name: Check JavaScript syntax
         run: for f in www/js/*.js; do node --check "$f"; done
