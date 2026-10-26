@@ -1,0 +1,17 @@
+{
+  "appId": "com.parandama.orderflow",
+  "appName": "OrderFlow Crypto Pro",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#0b0f17"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

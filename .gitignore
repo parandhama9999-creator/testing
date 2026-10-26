@@ -1,0 +1,12 @@
+node_modules/
+android/
+ios/
+*.apk
+*.aab
+*.jks
+*.keystore
+keystore.properties
+.DS_Store
+.idea/
+.vscode/
+npm-debug.log*

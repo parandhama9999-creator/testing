@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f17">
+<title>OrderFlow Crypto Pro</title>
+<style>
+:root {
+  --bg: #0b0f17; --panel: #111827; --panel2: #1f2937; --border: #273244; --text: #e5e7eb; --muted: #94a3b8;
+  --accent: #f59e0b; --bull: #10b981; --bear: #ef4444; --ad-h: 54px; --top-h: 42px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overflow: hidden;
+  font: 13px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+button, select, input { font: inherit; color: var(--text); }
+button { background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+button:active { filter: brightness(1.3); }
+button:disabled { opacity: .45; }
+select, input[type=number], input[type=text] { background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; }
+input[type=number] { width: 100%; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); } .small { font-size: 11px; }
+.pos-txt { color: var(--bull); } .neg-txt { color: var(--bear); }
+
+#app { position: fixed; inset: 0; display: flex; flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+#topbar { flex: 0 0 auto; height: var(--top-h); display: flex; gap: 6px; align-items: center; padding: 0 8px; overflow-x: auto;
+  background: var(--panel); border-bottom: 1px solid var(--border); scrollbar-width: none; white-space: nowrap; }
+#topbar::-webkit-scrollbar { display: none; }
+#topbar select, #topbar button { height: 30px; flex: 0 0 auto; }
+#topbar button { padding: 0 9px; }
+.brand { font-weight: 800; letter-spacing: .3px; margin-right: 2px; }
+.brand span { color: var(--accent); }
+#btnPro { color: var(--accent); border-color: #7c5a12; }
+body.pro #btnPro { color: #111; background: var(--accent); }
+#statusbar { flex: 0 0 auto; display: flex; gap: 12px; align-items: center; padding: 3px 8px; font-size: 12px;
+  border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; }
+#srcStatus::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; background: var(--muted); }
+#srcStatus.live::before { background: var(--bull); } #srcStatus.reconnecting::before, #srcStatus.connecting::before { background: var(--accent); }
+#srcStatus.offline::before { background: var(--bear); }
+#lastPrice { font-weight: 700; font-variant-numeric: tabular-nums; }
+.simtag { margin-left: auto; color: var(--accent); font-size: 11px; }
+
+#main { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+#chartWrap { position: relative; flex: 1 1 auto; min-height: 120px; overflow: hidden; }
+#chart { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+#demoBanner { position: absolute; top: 26px; left: 50%; transform: translateX(-50%); z-index: 3; pointer-events: none;
+  background: rgba(245,158,11,.95); color: #111; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
+
+#panel { flex: 0 0 auto; display: flex; flex-direction: column; background: var(--panel); border-top: 1px solid var(--border); max-height: 46vh; }
+.tabs { display: flex; flex: 0 0 auto; }
+.tab { flex: 1; border: 0; border-radius: 0; background: transparent; padding: 7px 4px; color: var(--muted); border-bottom: 2px solid transparent; }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+#panel.collapsed .pane { display: none !important; }
+.pane { overflow-y: auto; padding: 8px 10px 10px; height: 34vh; -webkit-overflow-scrolling: touch; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 2px 0; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 6px 0; }
+label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
+.simlabel { background: #3b2a06; color: #fcd34d; border: 1px solid #7c5a12; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; margin-bottom: 6px; text-align: center; }
+button.long { background: #065f46; border-color: #10b981; font-weight: 700; }
+button.short { background: #7f1d1d; border-color: #ef4444; font-weight: 700; }
+button.warn { background: #3f1d1d; border-color: #7f1d1d; }
+button.wide { width: 100%; margin-top: 6px; }
+.pos { border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; margin-top: 6px; background: #0f1724; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.stat { background: #0f1724; border: 1px solid var(--border); border-radius: 6px; padding: 5px 6px; }
+.stat b { display: block; font-size: 13px; }
+.hist, .whale { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; padding: 4px 0; border-bottom: 1px solid #1c2534; font-size: 11px; font-variant-numeric: tabular-nums; }
+.whale .buy { color: var(--bull); font-weight: 700; } .whale .sell { color: var(--bear); font-weight: 700; }
+
+#adArea { flex: 0 0 auto; height: var(--ad-h); display: flex; flex-direction: column; }
+#adSep { height: 4px; background: #05080d; border-top: 1px solid var(--border); }
+#adSlot { flex: 1; display: flex; align-items: center; justify-content: center; }
+.mock-ad { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #1e293b; color: var(--muted); font-size: 11px; border: 1px dashed #475569; }
+body.pro #adArea { display: none; }
+
+/* Compact (landscape phones, or forced when orientation lock is unavailable) */
+body.compact { --top-h: 32px; }
+body.compact #topbar { gap: 4px; padding: 0 6px; }
+body.compact #topbar select, body.compact #topbar button { height: 26px; font-size: 12px; }
+body.compact #statusbar { position: absolute; z-index: 4; top: calc(env(safe-area-inset-top) + var(--top-h) + 2px); left: calc(env(safe-area-inset-left) + 4px);
+  border: 0; background: rgba(11,15,23,.72); border-radius: 5px; padding: 2px 6px; font-size: 11px; pointer-events: none; }
+body.compact .simtag { display: none; }
+body.compact #main { flex-direction: row; }
+body.compact #panel { width: 270px; max-height: none; border-top: 0; border-left: 1px solid var(--border); }
+body.compact .pane { height: auto; flex: 1 1 auto; }
+body.compact #panel.collapsed { width: 40px; }
+body.compact #panel.collapsed .tabs { flex-direction: column; }
+body.compact #panel.collapsed .tab { writing-mode: vertical-rl; padding: 10px 0; }
+body.compact #demoBanner { top: 30px; }
+
+/* Modals */
+.modal-back { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.62); display: none; align-items: center; justify-content: center; padding: 12px; }
+.modal-back.open { display: flex; }
+.modal { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; width: min(440px, 100%); max-height: 88vh; overflow-y: auto; padding: 14px; }
+.modal h3 { margin: 0 0 10px; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
+.modal h3 button { padding: 2px 9px; }
+.modal .field { margin: 10px 0; }
+.modal input[type=range] { width: 100%; }
+.product { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin: 6px 0; }
+.aff { border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin: 8px 0; }
+.sponsored { float: right; font-size: 10px; background: #334155; padding: 1px 6px; border-radius: 4px; }
+#toast { position: fixed; left: 50%; bottom: calc(var(--ad-h) + 60px); transform: translateX(-50%); z-index: 80; background: #0f172a; border: 1px solid var(--border);
+  padding: 8px 14px; border-radius: 8px; max-width: 90vw; font-size: 12px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+#toast.show { opacity: 1; }
+textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); border: 1px solid var(--border); border-radius: 6px; font: 11px ui-monospace, monospace; }
+.mock-full { text-align: center; padding: 30px 10px; font-size: 15px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand">OrderFlow<span>Pro</span></div>
+    <select id="selSymbol" aria-label="Symbol"></select>
+    <select id="selTf" aria-label="Timeframe"></select>
+    <select id="selBin" aria-label="Bin size"></select>
+    <select id="selMode" aria-label="Cluster mode"></select>
+    <button id="btnRotate" title="Rotate (long-press to unlock)">🔄</button>
+    <button id="btnSettings" title="Settings">⚙️</button>
+    <button id="btnPro">⭐ Pro</button>
+    <button id="btnAbout" title="About">ℹ️</button>
+  </header>
+  <div id="statusbar">
+    <span id="srcStatus" class="connecting">Connecting…</span>
+    <span id="lastPrice">—</span>
+    <span class="simtag">Paper trading · Simulated — no real money</span>
+  </div>
+  <main id="main">
+    <section id="chartWrap">
+      <canvas id="chart"></canvas>
+      <div id="demoBanner">Demo data — loading live market…</div>
+    </section>
+    <aside id="panel">
+      <div class="tabs">
+        <button class="tab active" data-pane="paneTrade">Trade</button>
+        <button class="tab" data-pane="paneStats">Stats</button>
+        <button class="tab" data-pane="paneWhales">Whales</button>
+      </div>
+      <div class="pane" id="paneTrade">
+        <div class="simlabel">⚠ Simulated — no real money</div>
+        <div class="row"><span class="muted">Balance</span><b id="pBalance">—</b></div>
+        <div class="row"><span class="muted">Equity</span><b id="pEquity">—</b></div>
+        <div class="grid2">
+          <label>Margin (USDT)<input id="inMargin" type="number" inputmode="decimal" min="1" step="10" value="1000"></label>
+          <label>Leverage <b id="levVal">10x</b><input id="inLev" type="range" min="1" max="50" step="1" value="10"></label>
+        </div>
+        <div class="grid2"><button id="btnLong" class="long">LONG</button><button id="btnShort" class="short">SHORT</button></div>
+        <div id="posBox" class="pos hidden">
+          <div class="row"><b id="posSide"></b><span id="posSize" class="muted"></span></div>
+          <div class="row"><span class="muted">Entry</span><span id="posEntry"></span></div>
+          <div class="row"><span class="muted">Liquidation</span><span id="posLiq" class="neg-txt"></span></div>
+          <div class="row"><span class="muted">Unrealized PnL</span><b id="posPnl"></b></div>
+          <div class="row"><span class="muted">ROE</span><b id="posRoe"></b></div>
+          <div class="grid2">
+            <label>Stop-loss<input id="inSL" type="number" inputmode="decimal" step="any" placeholder="none"></label>
+            <label>Take-profit<input id="inTP" type="number" inputmode="decimal" step="any" placeholder="none"></label>
+          </div>
+          <div class="grid3"><button id="btnSetSLTP">Set SL/TP</button><button id="btnPlaceLines">Lines</button><button id="btnClose" class="warn">Close</button></div>
+          <div class="small muted">Drag the SL/TP lines on the chart to adjust.</div>
+        </div>
+        <div id="otherPos" class="small muted"></div>
+        <button id="btnRewarded" class="wide">🎬 Watch ad → +$50,000 virtual margin</button>
+      </div>
+      <div class="pane hidden" id="paneStats">
+        <div class="simlabel">Simulated results — no real money</div>
+        <div class="stats">
+          <div class="stat"><span class="small muted">Trades</span><b id="stTrades">0</b></div>
+          <div class="stat"><span class="small muted">Win rate</span><b id="stWin">0%</b></div>
+          <div class="stat"><span class="small muted">Profit factor</span><b id="stPF">–</b></div>
+          <div class="stat"><span class="small muted">Total PnL</span><b id="stPnl">$0.00</b></div>
+          <div class="stat"><span class="small muted">Max drawdown</span><b id="stDD">0%</b></div>
+          <div class="stat"><span class="small muted">Ad credits</span><b id="stGrants">$0</b></div>
+        </div>
+        <div class="grid2"><button id="btnCSV">Export CSV</button><button id="btnResetAcct" class="warn">Reset account</button></div>
+        <div id="historyList"></div>
+      </div>
+      <div class="pane hidden" id="paneWhales">
+        <div id="whaleInfo" class="small muted"></div>
+        <div id="whaleList"></div>
+      </div>
+    </aside>
+  </main>
+  <footer id="adArea"><div id="adSep"></div><div id="adSlot"></div></footer>
+</div>
+
+<div class="modal-back" id="mSettings"><div class="modal">
+  <h3>Settings <button data-close>✕</button></h3>
+  <div class="field"><label>Color preset<select id="setPreset"></select></label></div>
+  <div class="grid2">
+    <label>Bull color<input id="setBull" type="color"></label>
+    <label>Bear color<input id="setBear" type="color"></label>
+  </div>
+  <div class="field"><label>Shading direction<select id="setShading">
+    <option value="dark">Dark-to-Light (strong = dark, solid)</option>
+    <option value="heat">Light-to-Dark heatmap (strong = bright neon)</option>
+  </select></label></div>
+  <div class="field"><label>Diagonal imbalance ratio: <b id="setImbVal">3.0</b>x<input id="setImb" type="range" min="2" max="6" step="0.5"></label></div>
+  <div class="field"><label>Whale filter (notional)<select id="setWhale"></select></label></div>
+  <div class="field"><label style="flex-direction:row;align-items:center;gap:8px"><input id="setSound" type="checkbox"> Whale sound ping</label></div>
+  <button id="btnResetSettings" class="warn wide">Reset to defaults</button>
+</div></div>
+
+<div class="modal-back" id="mPaywall"><div class="modal">
+  <h3>⭐ OrderFlow Pro <button data-close>✕</button></h3>
+  <div class="small muted">Pro removes ads, unlocks 10x/25x bins and unlimited whale alerts.</div>
+  <div id="productList"></div>
+  <div class="grid2"><button id="btnRestore">Restore Purchases</button><button id="btnRevokeMock" class="hidden">Revoke (mock)</button></div>
+  <div id="payStatus" class="small muted"></div>
+</div></div>
+
+<div class="modal-back" id="mAbout"><div class="modal">
+  <h3>About <button data-close>✕</button></h3>
+  <p><b>OrderFlow Crypto Pro</b> <span id="aboutVersion" class="muted"></span></p>
+  <p>Educational tool. Not financial advice. Market data from public exchange feeds.</p>
+  <p>Paper trading is simulated — no real money, no real orders, no exchange account.</p>
+  <p><a id="privacyLink" href="#" target="_blank" rel="noopener" style="color:#93c5fd">Privacy policy</a></p>
+  <div id="affiliates"></div>
+</div></div>
+
+<div class="modal-back" id="mConfirm"><div class="modal">
+  <p id="confirmMsg"></p>
+  <div class="grid2"><button id="confirmNo">Cancel</button><button id="confirmYes" class="warn">OK</button></div>
+</div></div>
+
+<div class="modal-back" id="mMockAd"><div class="modal">
+  <h3><span id="mockAdTitle">Ad (mock)</span> <button id="mockAdClose">✕</button></h3>
+  <div class="mock-full" id="mockAdBody"></div>
+</div></div>
+
+<div class="modal-back" id="mCSV"><div class="modal">
+  <h3>Trade history CSV <button data-close>✕</button></h3>
+  <textarea id="csvText" readonly></textarea>
+  <button id="btnCopyCSV" class="wide">Copy to clipboard</button>
+</div></div>
+
+<div id="toast"></div>
+
+<script defer src="js/config.js"></script>
+<script defer src="js/storage.js"></script>
+<script defer src="js/market.js"></script>
+<script defer src="js/footprint.js"></script>
+<script defer src="js/renderer.js"></script>
+<script defer src="js/paper.js"></script>
+<script defer src="js/monetization.js"></script>
+<script defer src="js/ui.js"></script>
+<script defer src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "orderflow-crypto-pro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Crypto order-flow / footprint / paper-trading app (Capacitor + vanilla JS). Educational tool, not financial advice.",
+  "scripts": {
+    "serve": "python3 run_local.py",
+    "check": "for f in www/js/*.js; do node --check \"$f\" || exit 1; done && echo 'All JS OK'",
+    "cap:add": "npx cap add android && bash scripts/patch_android.sh",
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "~7.2.0",
+    "@capacitor/android": "~7.6.9",
+    "@capacitor/core": "~7.6.9",
+    "@capacitor/screen-orientation": "~7.0.4",
+    "cordova-plugin-purchase": "~13.19.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "~7.6.9"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
