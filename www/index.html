@@ -38,6 +38,7 @@ input[type=number] { width: 100%; }
 .brand span { color: var(--accent); }
 #btnPro { color: var(--accent); border-color: #7c5a12; }
 body.pro #btnPro { color: #111; background: var(--accent); }
+.active-tool { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
 #statusbar { flex: 0 0 auto; display: flex; gap: 12px; align-items: center; padding: 3px 8px; font-size: 12px;
   border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; }
 #srcStatus::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; background: var(--muted); }
@@ -147,8 +148,9 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
     <div class="brand">OrderFlow<span>Pro</span></div>
     <select id="selSymbol" aria-label="Symbol"></select>
     <select id="selTf" aria-label="Timeframe"></select>
-    <select id="selBin" aria-label="Bin size"></select>
+    <input type="number" id="inBin" min="0.0001" step="any" style="width:64px;height:30px;flex:0 0 auto" aria-label="Bin size" inputmode="decimal" title="Footprint bin size (price units)">
     <select id="selMode" aria-label="Cluster mode"></select>
+    <button id="btnDraw" title="Draw horizontal line" style="padding:0 8px">✏️</button>
     <button id="btnRotate" title="Rotate (long-press to unlock)">🔄</button>
     <button id="btnStudy" title="Study / Replay">📼</button>
     <button id="btnSettings" title="Settings">⚙️</button>
@@ -278,6 +280,12 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
   </div>
   <div class="field"><label style="flex-direction:row;align-items:center;gap:6px"><input id="setShowSMA" type="checkbox"> SMA period <input id="setSmaPeriod" type="number" min="2" max="200" style="width:56px;margin-left:4px"></label></div>
   <div class="field"><label style="flex-direction:row;align-items:center;gap:6px"><input id="setShowEMA" type="checkbox"> EMA period <input id="setEmaPeriod" type="number" min="2" max="200" style="width:56px;margin-left:4px"></label></div>
+  <h4 style="margin:14px 0 6px;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Panels &amp; Alerts</h4>
+  <div class="grid2">
+    <label style="flex-direction:row;align-items:center;gap:6px"><input id="setShowVolBars" type="checkbox"> Volume bars</label>
+    <label style="flex-direction:row;align-items:center;gap:6px"><input id="setShowSessions" type="checkbox"> Session lines</label>
+    <label style="flex-direction:row;align-items:center;gap:6px"><input id="setAlertSound" type="checkbox"> Alert sound</label>
+  </div>
   <button id="btnResetSettings" class="warn wide">Reset to defaults</button>
 </div></div>
 

@@ -30,7 +30,8 @@
       'ADAUSDT', 'AVAXUSDT', 'DOTUSDT', 'LINKUSDT', 'LTCUSDT', 'MATICUSDT',
       'NEARUSDT', 'ATOMUSDT', 'UNIUSDT', 'AAVEUSDT', 'OPUSDT', 'ARBUSDT',
       'SUIUSDT', 'PEPEUSDT', 'FILUSDT', 'INJUSDT', 'SEIUSDT', 'MKRUSDT',
-      'RENDERUSDT', 'FETUSDT', 'TIAUSDT', 'WIFUSDT', 'JUPUSDT', 'LDOUSDT'
+      'RENDERUSDT', 'FETUSDT', 'TIAUSDT', 'WIFUSDT', 'JUPUSDT', 'LDOUSDT',
+      'GOLDUSDT'
     ],
     // tick/lot are fallbacks; live values are loaded from exchangeInfo / instruments-info.
     // baseBin is the 1x footprint row size; seed is only used for the clearly-labelled demo bars.
@@ -64,12 +65,14 @@
       TIAUSDT:    { tick: 0.0001,    lot: 0.1,    baseBin: 0.005,    seed: 7       },
       WIFUSDT:    { tick: 0.0001,    lot: 1,      baseBin: 0.001,    seed: 2.5     },
       JUPUSDT:    { tick: 0.0001,    lot: 1,      baseBin: 0.001,    seed: 1.2     },
-      LDOUSDT:    { tick: 0.001,     lot: 1,      baseBin: 0.01,     seed: 1.8     }
+      LDOUSDT:    { tick: 0.001,     lot: 1,      baseBin: 0.01,     seed: 1.8     },
+      GOLDUSDT:   { tick: 0.01,      lot: 0.01,   baseBin: 0.5,      seed: 2000    }
     },
     TIMEFRAMES: { '1m': 60000, '3m': 180000, '5m': 300000, '15m': 900000, '30m': 1800000, '1h': 3600000, '4h': 14400000 },
     BYBIT_INTERVAL: { '1m': '1', '3m': '3', '5m': '5', '15m': '15', '30m': '30', '1h': '60', '4h': '240' },
     BIN_MULTIPLIERS: [1, 2, 5, 10, 25],
     PRO_MULTIPLIERS: [10, 25],
+    MAX_LOOKBACK_BARS: 500,
     CLUSTER_MODES: { bidask: 'Bid × Ask', delta: 'Delta', 'delta%': 'Delta %', volume: 'Volume', bid: 'Bid', ask: 'Ask' },
     ALERT_MAX: 20,
     BAR_CACHE_MAX: 200,
@@ -156,15 +159,19 @@
       showImb: true,      // draw diagonal imbalance markers
       showProfile: false, // show the session volume profile panel
       showVA: false,      // draw VAH/VAL dashed lines
-      showCVD: false,     // show cumulative volume delta strip
-      showMatrix: false,  // show the bottom OHLCV matrix rows
+      showCVD: true,      // show cumulative volume delta strip
+      showMatrix: true,   // show the bottom OHLCV matrix rows
+      showVolBars: true,  // show standalone volume histogram sub-panel
+      showSessions: true, // show Asia/London/NY session open lines
       // ---- Indicators -----------------------------------------------------------------------
       showVWAP: false,    // session VWAP overlay (resets at UTC midnight)
       showSMA: false,     // simple moving average
       smaPeriod: 20,
       showEMA: false,     // exponential moving average
       emaPeriod: 9,
-      showCPR: false      // central pivot range (P / BC / TC from previous day)
+      showCPR: false,     // central pivot range (P / BC / TC from previous day)
+      // ---- Alerts ---------------------------------------------------------------------------
+      alertSound: false   // beep when a price alert fires
     },
 
     AFFILIATES: [
@@ -269,6 +276,26 @@
 
   U.roundToTick = function (x, tick) {
     return Number((Math.round(x / tick) * tick).toFixed(U.decimalsOf(tick)));
+  };
+
+  U.roundSig = function (v, sig) {
+    if (!v || !isFinite(v)) return v;
+    var d = Math.ceil(Math.log10(Math.abs(v)));
+    var mag = Math.pow(10, sig - d);
+    return Math.round(v * mag) / mag;
+  };
+
+  U.beep = function (freq, dur) {
+    try {
+      if (!U._audioCtx) U._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var ac = U._audioCtx, o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.frequency.value = freq || 880;
+      g.gain.setValueAtTime(0.25, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + (dur || 0.25));
+      o.start(ac.currentTime);
+      o.stop(ac.currentTime + (dur || 0.25));
+    } catch (e) { /* ignore — autoplay policy */ }
   };
 
   U.isNative = function () {

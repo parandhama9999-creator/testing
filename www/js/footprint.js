@@ -146,6 +146,28 @@
     this._touch();
   };
 
+  // Prepend historical klines before the oldest bar (continuous scroll lookback).
+  P.prependKlines = function (klines) {
+    if (!klines.length) return;
+    var oldest = this.bars.length ? this.bars[0].t : Infinity;
+    var self = this;
+    var newBars = klines
+      .filter(function (k) { return k.t < oldest; })
+      .map(function (k) {
+        var b = self._newBar(k.t, k.o, false);
+        b.h = k.h; b.l = k.l; b.c = k.c; b.v = k.v;
+        if (k.takerBuy != null) {
+          b.delta = Math.round((2 * k.takerBuy - k.v) * 1e8) / 1e8;
+          b.deltaKnown = true;
+          b.klineV = k.v;
+        }
+        return b;
+      });
+    if (!newBars.length) return;
+    this.bars = newBars.concat(this.bars);
+    this._touch();
+  };
+
   // Rebuild the footprint of the last `coverBars` bars from REST trades, then apply the live
   // trades buffered while the backfill was in flight (deduplicated).
   P.backfill = function (trades, buffered, coverBars) {

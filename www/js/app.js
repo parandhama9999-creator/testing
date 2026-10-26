@@ -18,8 +18,10 @@
     study: null,
     state: {
       symbol: null, tf: null, loadToken: 0, buffering: false, buffer: [], hiddenAt: 0,
-      lastPrice: null, lastTradeTs: 0, prices: {}, liveMeta: {}, retryTimer: 0, firstPaintMs: null
-    }
+      lastPrice: null, lastTradeTs: 0, prices: {}, liveMeta: {}, retryTimer: 0, firstPaintMs: null,
+      fetchingMore: false
+    },
+    drawLines: []
   });
   var st = app.state;
 
@@ -38,15 +40,41 @@
 
   function applySettings() {
     var s = app.settings, r = app.renderer;
-    if (!app.monet.isPro && C.PRO_MULTIPLIERS.indexOf(s.mult) >= 0) s.mult = 1;
+    if (!app.monet.isPro && +s.mult > 5) s.mult = 1;
     r.setColors(s.bull, s.bear);
     r.setOptions({ mode: s.mode, mult: s.mult, imbalance: s.imbalance, shading: s.shading,
       volFilter: s.volFilter, stackedImb: s.stackedImb,
       showPOC: s.showPOC, showImb: s.showImb, showProfile: s.showProfile,
       showVA: s.showVA, showCVD: s.showCVD, showMatrix: s.showMatrix,
+      showVolBars: s.showVolBars, showSessions: s.showSessions,
       showVWAP: s.showVWAP, showSMA: s.showSMA, smaPeriod: s.smaPeriod,
       showEMA: s.showEMA, emaPeriod: s.emaPeriod, showCPR: s.showCPR });
   }
+
+  function saveDrawLines() { S.set('drawLines_' + st.symbol, app.drawLines); }
+  function loadDrawLines() {
+    app.drawLines = S.get('drawLines_' + st.symbol, []);
+    app.renderer.userLines = app.drawLines.map(function (l) { return Object.assign({}, l); });
+  }
+
+  app.fetchMoreBars = async function () {
+    if (st.fetchingMore || !app.engine || app.engine.isSeed || !app.engine.bars.length) return;
+    if (app.engine.bars.length >= C.MAX_LOOKBACK_BARS) return;
+    st.fetchingMore = true;
+    var oldest = app.engine.bars[0].t, sym = st.symbol, tf = st.tf;
+    try {
+      var klines = await app.market.fetchKlines(sym, tf, C.KLINE_LIMIT, oldest);
+      if (st.symbol !== sym || st.tf !== tf) { st.fetchingMore = false; return; }
+      if (klines.length) { app.engine.prependKlines(klines); app.renderer.onBarsUpdated(); }
+    } catch (err) { console.warn('[app] fetchMoreBars:', err.message); }
+    st.fetchingMore = false;
+  };
+
+  app.setDrawMode = function (on) {
+    st.drawMode = !!on;
+    app.renderer.setDrawMode(on);
+    OF.ui.setDrawActive(on);
+  };
 
   function configureEngine() {
     var m = app.meta();
@@ -142,6 +170,7 @@
       var triggered = app.alerts.check(sym, t.price, st.lastPrice);
       for (var ai = 0; ai < triggered.length; ai++) {
         OF.ui.toast('⚡ Alert: ' + sym + ' @ ' + U.fmtPrice(triggered[ai].price, app.meta().dec));
+        if (app.settings.alertSound) U.beep(880, 0.25);
         OF.ui.renderAlerts(sym);
       }
     }
@@ -184,6 +213,7 @@
     st.loadToken++;
     st.lastTradeTs = 0;
     seedDemo();
+    loadDrawLines();
     OF.ui.resetWhales();
     OF.ui.renderPaper(true);
     app.loadMarket();
@@ -321,6 +351,9 @@
     document.documentElement.dataset.theme = initTheme === 'light' ? 'light' : '';
     app.renderer.setAppTheme(initTheme);
     seedDemo();
+    loadDrawLines();
+    app.renderer.onScrollLeft = function () { app.fetchMoreBars(); };
+    app.renderer.onUserLineAdded = function (lines) { app.drawLines = lines.slice(); saveDrawLines(); };
     app.renderer.draw(); // first frame synchronously: demo bars visible immediately
     st.firstPaintMs = performance.now() - t0;
 

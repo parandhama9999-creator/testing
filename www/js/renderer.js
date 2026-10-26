@@ -38,6 +38,12 @@
     this.showEMA = false;
     this.emaPeriod = 9;
     this.showCPR = false;
+    this.showVolBars = true;
+    this.showSessions = true;
+    this.drawMode = false;
+    this.userLines = [];
+    this.onScrollLeft = null;
+    this._scrollLeftFired = false;
     this.view = { barW: 64, rowH: 16, offset: 0, center: null, follow: true };
     this.W = 0; this.H = 0; this.dpr = 1;
     this.raf = 0;
@@ -87,6 +93,8 @@
     if (o.showEMA != null) this.showEMA = !!o.showEMA;
     if (o.emaPeriod) this.emaPeriod = Math.max(2, +o.emaPeriod || 9);
     if (o.showCPR != null) this.showCPR = !!o.showCPR;
+    if (o.showVolBars != null) this.showVolBars = !!o.showVolBars;
+    if (o.showSessions != null) this.showSessions = !!o.showSessions;
     this.markDirty();
   };
 
@@ -165,12 +173,21 @@
     var profW = (!this.showProfile || W < 340) ? 0 : narrow ? 40 : 70;
     var timeH = 16;
     var mRow = (!this.showMatrix || H < 260) ? 0 : 13;
-    var cvdH = (!this.showCVD || !mRow || H < 380) ? 0 : 34;
-    var matrixH = mRow ? mRow * MATRIX_ROWS.length + cvdH : 0;
-    var chartW = Math.max(40, W - axisW - bookW - profW), chartH = Math.max(40, H - timeH - matrixH);
+    var matrixH = mRow ? mRow * MATRIX_ROWS.length : 0;
+    var cvdH = (this.showCVD && H - matrixH > 280) ? 34 : 0;
+    var volH = (this.showVolBars && H - matrixH - cvdH > 220) ? 30 : 0;
+    var chartH = Math.max(40, H - timeH - matrixH - cvdH - volH);
+    var chartW = Math.max(40, W - axisW - bookW - profW);
+    var mY = chartH;
+    var cvdY = chartH + matrixH;
+    var volY = cvdY + cvdH;
     return {
-      W: W, H: H, chartW: chartW, chartH: chartH, profX: chartW, profW: profW, bookX: chartW + profW, bookW: bookW,
-      axisX: W - axisW, axisW: axisW, mY: chartH, mRow: mRow, cvdY: chartH + mRow * MATRIX_ROWS.length, cvdH: cvdH,
+      W: W, H: H, chartW: chartW, chartH: chartH,
+      profX: chartW, profW: profW, bookX: chartW + profW, bookW: bookW,
+      axisX: W - axisW, axisW: axisW,
+      mY: mY, mRow: mRow,
+      cvdY: cvdY, cvdH: cvdH,
+      volY: volY, volH: volH,
       timeY: H - timeH, timeH: timeH
     };
   };
@@ -222,9 +239,11 @@
     ctx.save();
     ctx.beginPath(); ctx.rect(0, 0, L.chartW, L.chartH); ctx.clip();
     this._grid(L, S);
+    this._sessionLines(L, S);
     this._valueArea(L, S);
     this._bars(L, S);
     this._indicators(L, S);
+    this._userLines(L, S);
     this._lastLine(L, S);
     this._tradeLines(L, S);
     if (e.isSeed) this._watermark(L);
@@ -233,6 +252,7 @@
     this._book(L, S);
     this._axis(L, S);
     this._matrix(L, S);
+    this._volBars(L, S);
     this._timeAxis(L, S);
     this._crosshair(L, S);
     this.drawCount++;
@@ -610,6 +630,102 @@
     if (L.cvdH) this._cvd(L, S);
   };
 
+  P._sessionLines = function (L, S) {
+    if (!this.showSessions) return;
+    var e = this.engine, tfMs = e.tfMs;
+    if (tfMs >= 14400000) return;
+    var ctx = this.ctx;
+    var SESS = [
+      { h: 0,  label: 'AS', col: 'rgba(96,165,250,0.40)' },
+      { h: 8,  label: 'LD', col: 'rgba(250,204,21,0.40)' },
+      { h: 13, label: 'NY', col: 'rgba(52,211,153,0.40)' }
+    ];
+    ctx.save();
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    for (var i = S.i0; i <= S.i1; i++) {
+      var d = new Date(e.bars[i].t);
+      var h = d.getUTCHours(), m = d.getUTCMinutes();
+      for (var j = 0; j < SESS.length; j++) {
+        if (h === SESS[j].h && m === 0) {
+          var x = Math.round(S.xOf(i) - S.barW / 2) + 0.5;
+          ctx.strokeStyle = SESS[j].col;
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, L.chartH); ctx.stroke();
+          if (S.barW >= 22) {
+            ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+            ctx.fillStyle = SESS[j].col;
+            ctx.fillText(SESS[j].label, x + 2, 2);
+          }
+        }
+      }
+    }
+    ctx.restore();
+  };
+
+  P._userLines = function (L, S) {
+    if (!this.userLines.length) return;
+    var ctx = this.ctx, self = this;
+    ctx.save();
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 3]);
+    this.userLines.forEach(function (ln) {
+      var y = S.yOf(ln.price);
+      if (y < 0 || y > L.chartH) return;
+      ctx.strokeStyle = ln.color;
+      ctx.beginPath();
+      ctx.moveTo(0, Math.round(y) + 0.5);
+      ctx.lineTo(L.chartW, Math.round(y) + 0.5);
+      ctx.stroke();
+      self._axisTag(L, y, U.fmtPrice(ln.price, S.dec), ln.color);
+    });
+    ctx.restore();
+  };
+
+  P._volBars = function (L, S) {
+    if (!L.volH) return;
+    var ctx = this.ctx, e = this.engine, y0 = L.volY;
+    ctx.fillStyle = PANEL;
+    ctx.fillRect(0, y0, L.W, L.volH);
+    ctx.fillStyle = 'rgba(148,163,184,0.12)';
+    ctx.fillRect(0, y0, L.W, 1);
+    ctx.fillStyle = MUTED; ctx.font = '9px ' + MONO; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('VOL', L.profX + 4, y0 + L.volH / 2 + 0.5);
+    var maxV = 0;
+    for (var i = S.i0; i <= S.i1; i++) { if (e.bars[i].v > maxV) maxV = e.bars[i].v; }
+    if (!maxV) return;
+    var bh = L.volH - 4, bw = S.barW;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, y0, L.chartW, L.volH); ctx.clip();
+    for (var j = S.i0; j <= S.i1; j++) {
+      var bar = e.bars[j];
+      var barH = Math.max(1, Math.round((bar.v / maxV) * bh));
+      var x = S.xOf(j) - bw / 2 + 1;
+      if (bar.deltaKnown && bar.v > 0) {
+        var buyV = (bar.v + bar.delta) / 2;
+        var buyH = Math.max(0, Math.round(barH * buyV / bar.v));
+        var sellH = barH - buyH;
+        if (buyH > 0) { ctx.fillStyle = this.bull; ctx.fillRect(x, y0 + L.volH - 2 - buyH, bw - 2, buyH); }
+        if (sellH > 0) { ctx.fillStyle = this.bear; ctx.fillRect(x, y0 + L.volH - 2 - barH, bw - 2, sellH); }
+      } else {
+        ctx.fillStyle = bar.c >= bar.o ? this.bull : this.bear;
+        ctx.globalAlpha = 0.75;
+        ctx.fillRect(x, y0 + L.volH - 2 - barH, bw - 2, barH);
+        ctx.globalAlpha = 1;
+      }
+    }
+    ctx.restore();
+  };
+
+  P.setDrawMode = function (on) {
+    this.drawMode = !!on;
+    this.canvas.style.cursor = on ? 'crosshair' : '';
+  };
+
+  P.onBarsUpdated = function () {
+    this._scrollLeftFired = false;
+    this.markDirty();
+  };
+
   P._cvd = function (L, S) {
     var ctx = this.ctx, cv = this.engine.cvd(), lo = Infinity, hi = -Infinity, i, lastV = null;
     for (i = S.i0; i <= S.i1; i++) if (cv[i] != null) { lo = Math.min(lo, cv[i]); hi = Math.max(hi, cv[i]); lastV = cv[i]; }
@@ -756,6 +872,12 @@
           self.view.center = d.c0 + (p.y - d.y0) / ppp;
         }
         if (d.mouse) self.crosshair = null;
+        // Trigger continuous lookback when scrolled to the left edge.
+        if (self.S && self.S.i0 <= 1 && !self._scrollLeftFired && self.onScrollLeft) {
+          self._scrollLeftFired = true;
+          self.onScrollLeft();
+        }
+        if (self.S && self.S.i0 > 5) self._scrollLeftFired = false;
         self.markDirty();
       } else if (d.type === 'cross') {
         self.crosshair = { x: p.x, y: p.y };
@@ -774,7 +896,21 @@
         if (now - self.lastTap < 300) { self.lastTap = 0; self.resetView(); }
         else {
           self.lastTap = now;
-          if (self.crosshair && !d.mouse) { self.crosshair = null; self.markDirty(); }
+          if (self.drawMode && self.S && self.L && d.x0 < self.L.chartW) {
+            var tprice = self.S.priceAt(d.y0), removed = false;
+            for (var uli = 0; uli < self.userLines.length; uli++) {
+              if (Math.abs(self.S.yOf(self.userLines[uli].price) - d.y0) < 12) {
+                self.userLines.splice(uli, 1);
+                removed = true;
+                break;
+              }
+            }
+            if (!removed) self.userLines.push({ id: Date.now(), price: tprice, color: '#f59e0b' });
+            if (self.onUserLineAdded) self.onUserLineAdded(self.userLines.slice());
+            self.markDirty();
+          } else if (self.crosshair && !d.mouse) {
+            self.crosshair = null; self.markDirty();
+          }
         }
       }
       self.drag = null;

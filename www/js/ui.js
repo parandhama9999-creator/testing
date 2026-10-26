@@ -59,29 +59,28 @@
   }
 
   UI.buildBinSelect = function () {
-    var sel = $('selBin'), meta = app.meta(), pro = app.monet.isPro;
-    sel.innerHTML = '';
-    C.BIN_MULTIPLIERS.forEach(function (m) {
-      var locked = !pro && C.PRO_MULTIPLIERS.indexOf(m) >= 0;
-      sel.appendChild(opt(m, m + 'x · ' + U.fmtPrice(meta.baseBin * m, meta.dec) + (locked ? ' 🔒' : '')));
-    });
-    sel.value = String(app.settings.mult);
+    var inp = $('inBin'), meta = app.meta(), s = app.settings;
+    if (inp) inp.value = U.roundSig(meta.baseBin * (+s.mult || 1), 4);
   };
 
   function bindTopbar() {
     $('selSymbol').addEventListener('change', function (e) { app.setSymbol(e.target.value); UI.buildBinSelect(); UI.setActiveSymbol(e.target.value); });
     $('selTf').addEventListener('change', function (e) { app.setTf(e.target.value); });
     $('selMode').addEventListener('change', function (e) { app.setMode(e.target.value); });
-    $('selBin').addEventListener('change', function (e) {
-      var m = +e.target.value;
-      if (C.PRO_MULTIPLIERS.indexOf(m) >= 0 && !app.monet.isPro) {
-        e.target.value = String(app.settings.mult);
-        UI.toast('10x / 25x bins are a Pro feature');
+    $('inBin').addEventListener('change', function (e) {
+      var absSize = parseFloat(e.target.value);
+      if (!absSize || absSize <= 0) { UI.buildBinSelect(); return; }
+      var meta = app.meta();
+      var m = Math.max(0.01, absSize / (meta.baseBin || absSize));
+      if (m > 5 && !app.monet.isPro) {
+        UI.buildBinSelect();
+        UI.toast('Large bin sizes are a Pro feature');
         UI.openPaywall();
         return;
       }
       app.setMult(m);
     });
+    $('btnDraw').addEventListener('click', function () { app.setDrawMode(!app.state.drawMode); });
     $('btnSettings').addEventListener('click', UI.openSettings);
     $('btnPro').addEventListener('click', UI.openPaywall);
     $('btnAbout').addEventListener('click', function () { open('mAbout'); });
@@ -292,6 +291,9 @@
     $('setShowEMA').checked = !!s.showEMA;
     $('setEmaPeriod').value = s.emaPeriod != null ? s.emaPeriod : 9;
     $('setShowCPR').checked = !!s.showCPR;
+    $('setShowVolBars').checked = s.showVolBars !== false;
+    $('setShowSessions').checked = s.showSessions !== false;
+    $('setAlertSound').checked = !!s.alertSound;
   }
   UI.openSettings = function () { fillSettings(); open('mSettings'); };
 
@@ -331,6 +333,9 @@
     $('setShowEMA').addEventListener('change', function (e) { app.updateSettings({ showEMA: e.target.checked }); });
     $('setEmaPeriod').addEventListener('change', function (e) { app.updateSettings({ emaPeriod: Math.max(2, +e.target.value || 9) }); });
     $('setShowCPR').addEventListener('change', function (e) { app.updateSettings({ showCPR: e.target.checked }); });
+    $('setShowVolBars').addEventListener('change', function (e) { app.updateSettings({ showVolBars: e.target.checked }); setTimeout(function () { app.renderer.resize(); }, 0); });
+    $('setShowSessions').addEventListener('change', function (e) { app.updateSettings({ showSessions: e.target.checked }); });
+    $('setAlertSound').addEventListener('change', function (e) { app.updateSettings({ alertSound: e.target.checked }); });
     $('btnResetSettings').addEventListener('click', function () {
       app.resetSettings();
       fillSettings();
@@ -497,6 +502,11 @@
       strip.appendChild(chip);
     });
   }
+
+  UI.setDrawActive = function (on) {
+    var btn = $('btnDraw');
+    if (btn) btn.classList.toggle('active-tool', !!on);
+  };
 
   UI.setActiveSymbol = function (sym) {
     document.querySelectorAll('.wchip').forEach(function (c) {

@@ -150,10 +150,12 @@
   };
 
   // Returns ascending [{t,o,h,l,c,v,takerBuy|null}]
-  P.fetchKlines = function (sym, tf, limit) {
+  // endTime is exclusive — pass oldest bar's t to page backwards.
+  P.fetchKlines = function (sym, tf, limit, endTime) {
     return this._withFallback(async function (src) {
       if (src === 'binance') {
         var url = C.ENDPOINTS.binance.rest + '/fapi/v1/klines?symbol=' + sym + '&interval=' + tf + '&limit=' + limit;
+        if (endTime) url += '&endTime=' + (endTime - 1);
         var arr = await getJSON(url);
         if (!Array.isArray(arr)) throw new Error('Bad klines payload');
         return arr.map(function (k) {
@@ -162,6 +164,7 @@
       }
       var bu = C.ENDPOINTS.bybit.rest + '/v5/market/kline?category=linear&symbol=' + sym +
         '&interval=' + C.BYBIT_INTERVAL[tf] + '&limit=' + limit;
+      if (endTime) bu += '&end=' + (endTime - 1);
       var r = await getJSON(bu);
       if (!r || r.retCode !== 0 || !r.result) { var e = new Error('Bybit kline error ' + (r && r.retMsg)); e.status = 502; throw e; }
       return r.result.list.map(function (k) {
