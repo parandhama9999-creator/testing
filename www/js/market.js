@@ -64,7 +64,7 @@
   // ---- Market --------------------------------------------------------------------------------
   function Market(opts) {
     var saved = 'bybit';
-    try { saved = OF.storage.get('marketSource', 'bybit'); } catch (e) {}
+    try { saved = OF.storage.get('marketSource', 'bybit'); } catch (e) { /* storage unavailable */ }
     this.source = saved;
     this.onSourceChange = (opts && opts.onSourceChange) || function () {};
     this.connId = 0;
@@ -87,7 +87,7 @@
     if (this.source === src) return;
     console.warn('[market] switching data source to', src, '-', reason);
     this.source = src;
-    try { OF.storage.set('marketSource', src); } catch (e) {}
+    try { OF.storage.set('marketSource', src); } catch (e) { /* storage unavailable */ }
     this.onSourceChange(src, reason);
   };
 
