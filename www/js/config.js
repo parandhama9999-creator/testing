@@ -179,6 +179,18 @@
       { name: 'Bybit', url: 'https://www.bybit.com/', blurb: 'Crypto derivatives exchange.' }
     ],
 
+    // ---- Templates ---------------------------------------------------------------------------
+    TEMPLATES_KEY: 'savedTemplates',
+    // Settings keys captured in a template (display + indicators, not symbol/tf/personal prefs).
+    TEMPLATE_KEYS: [
+      'mode', 'mult',
+      'preset', 'bull', 'bear', 'shading', 'appTheme',
+      'imbalance', 'volFilter', 'stackedImb',
+      'showPOC', 'showImb', 'showProfile', 'showVA',
+      'showCVD', 'showMatrix', 'showVolBars', 'showSessions',
+      'showVWAP', 'showSMA', 'smaPeriod', 'showEMA', 'emaPeriod', 'showCPR'
+    ],
+
     // ---- Legal / compliance ------------------------------------------------------------------
     // Bump the version suffix to force all users to re-accept after a policy change.
     RISK_ACCEPTED_KEY: 'riskAcceptedV1'

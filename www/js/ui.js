@@ -28,6 +28,7 @@
     bindRotate();
     bindStudy();
     bindAlerts();
+    bindTemplates();
     bindRiskDisclaimer();
     $('aboutVersion').textContent = 'v' + C.VERSION;
     $('privacyLink').href = C.PRIVACY_POLICY_URL;
@@ -150,6 +151,81 @@
       $('btnWatch').classList.toggle('active-tool', nowShown);
       $('btnWatch').setAttribute('aria-expanded', nowShown ? 'true' : 'false');
       setTimeout(function () { app.renderer.resize(); }, 0);
+    });
+  }
+
+  // ---- Templates -----------------------------------------------------------------------------
+  function loadTemplates() {
+    try { return JSON.parse(window.localStorage.getItem(C.TEMPLATES_KEY) || '[]'); } catch (e) { return []; }
+  }
+
+  function saveTemplates(list) {
+    try { window.localStorage.setItem(C.TEMPLATES_KEY, JSON.stringify(list)); } catch (e) { /* quota */ }
+  }
+
+  function snapshotSettings() {
+    var s = app.settings, snap = {};
+    C.TEMPLATE_KEYS.forEach(function (k) { snap[k] = s[k]; });
+    return snap;
+  }
+
+  function renderTemplateList() {
+    var list = loadTemplates();
+    var container = $('tplList');
+    container.innerHTML = '';
+    if (!list.length) {
+      container.innerHTML = '<div id="tplEmpty" style="font-size:12px;color:var(--muted);text-align:center;padding:16px 0">No templates saved yet.</div>';
+      return;
+    }
+    list.forEach(function (tpl, idx) {
+      var row = document.createElement('div');
+      row.className = 'tpl-item';
+      var nm = document.createElement('span');
+      nm.className = 'tpl-name';
+      nm.textContent = tpl.name;
+      var btnLoad = document.createElement('button');
+      btnLoad.textContent = 'Load';
+      btnLoad.setAttribute('aria-label', 'Load template ' + tpl.name);
+      btnLoad.addEventListener('click', function () {
+        app.updateSettings(tpl.settings);
+        setTimeout(function () { app.renderer.resize(); }, 0);
+        UI.fillSettings();
+        close('mTemplates');
+        UI.toast('Template "' + tpl.name + '" loaded');
+      });
+      var btnDel = document.createElement('button');
+      btnDel.textContent = '✕';
+      btnDel.className = 'warn';
+      btnDel.setAttribute('aria-label', 'Delete template ' + tpl.name);
+      btnDel.addEventListener('click', function () {
+        var updated = loadTemplates();
+        updated.splice(idx, 1);
+        saveTemplates(updated);
+        renderTemplateList();
+      });
+      row.appendChild(nm);
+      row.appendChild(btnLoad);
+      row.appendChild(btnDel);
+      container.appendChild(row);
+    });
+  }
+
+  function bindTemplates() {
+    $('btnTemplates').addEventListener('click', function () {
+      renderTemplateList();
+      open('mTemplates');
+    });
+    $('btnTplSave').addEventListener('click', function () {
+      var name = $('tplNameInput').value.trim();
+      if (!name) { UI.toast('Enter a template name'); return; }
+      var list = loadTemplates();
+      var existing = list.findIndex(function (t) { return t.name === name; });
+      var entry = { name: name, settings: snapshotSettings() };
+      if (existing >= 0) list[existing] = entry; else list.push(entry);
+      saveTemplates(list);
+      $('tplNameInput').value = '';
+      renderTemplateList();
+      UI.toast('Template "' + name + '" saved');
     });
   }
 
