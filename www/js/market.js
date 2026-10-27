@@ -182,37 +182,48 @@
   // Trades from startTs to now, ascending. Binance: walks aggTrades BACKWARDS from the newest
   // (fromId pagination, limit=1000, capped) so the result always joins up with the live stream.
   P.fetchFootprintTrades = function (sym, startTs) {
-    return this._withFallback(async function (src) {
-      var out = [];
-      if (src === 'binance') {
-        var base = C.ENDPOINTS.binance.rest + '/fapi/v1/aggTrades?symbol=' + sym + '&limit=1000';
-        var fromId = null;
-        for (var req = 0; req < C.AGG_MAX_REQUESTS; req++) {
-          var arr = await getJSON(fromId == null ? base : base + '&fromId=' + fromId);
-          if (!Array.isArray(arr) || !arr.length) break;
-          for (var i = 0; i < arr.length; i++) out.push(normBinanceAgg(arr[i]));
-          var minId = arr[0].a, minTs = arr[0].T;
-          if (minTs <= startTs || minId <= 0) break;
-          fromId = Math.max(0, minId - 1000);
-        }
-        var seen = new Set();
-        out = out.filter(function (t) {
-          if (t.ts < startTs || seen.has(t.id)) return false;
-          seen.add(t.id);
-          return true;
-        });
-        out.sort(function (a, b) { return a.id - b.id; });
-        out.capped = out.length > 0 && out[0].ts > startTs + 1000;
+    var self = this;
+    // Always try Binance REST first for backfill — it supports pagination and covers 50+ bars.
+    // Binance REST works in all regions; only its WebSocket is geo-blocked in some areas.
+    return _fetchBinanceFootprint(sym, startTs).catch(function () {
+      return self._withFallback(async function (src) {
+        if (src === 'binance') throw new Error('binance already failed');
+        var out = [];
+        var r = await getJSON(C.ENDPOINTS.bybit.rest + '/v5/market/recent-trade?category=linear&symbol=' + sym + '&limit=1000');
+        if (!r || r.retCode !== 0 || !r.result) throw new Error('Bybit recent-trade error');
+        out = r.result.list.map(normBybitRest).filter(function (t) { return t.ts >= startTs; });
+        out.sort(function (a, b) { return a.ts - b.ts; });
+        out.capped = true;
         return out;
-      }
-      var r = await getJSON(C.ENDPOINTS.bybit.rest + '/v5/market/recent-trade?category=linear&symbol=' + sym + '&limit=1000');
-      if (!r || r.retCode !== 0 || !r.result) throw new Error('Bybit recent-trade error');
-      out = r.result.list.map(normBybitRest).filter(function (t) { return t.ts >= startTs; });
-      out.sort(function (a, b) { return a.ts - b.ts; });
-      out.capped = true; // Bybit only exposes the most recent 1000 trades publicly
-      return out;
+      });
     });
   };
+
+  function _fetchBinanceFootprint(sym, startTs) {
+    return (async function () {
+      var out = [];
+      var base = C.ENDPOINTS.binance.rest + '/fapi/v1/aggTrades?symbol=' + sym + '&limit=1000';
+      var fromId = null;
+      for (var req = 0; req < C.AGG_MAX_REQUESTS; req++) {
+        var arr = await getJSON(fromId == null ? base : base + '&fromId=' + fromId);
+        if (!Array.isArray(arr) || !arr.length) break;
+        for (var i = 0; i < arr.length; i++) out.push(normBinanceAgg(arr[i]));
+        var minId = arr[0].a, minTs = arr[0].T;
+        if (minTs <= startTs || minId <= 0) break;
+        fromId = Math.max(0, minId - 1000);
+      }
+      if (!out.length) throw new Error('Binance returned no trades');
+      var seen = new Set();
+      out = out.filter(function (t) {
+        if (t.ts < startTs || seen.has(t.id)) return false;
+        seen.add(t.id);
+        return true;
+      });
+      out.sort(function (a, b) { return a.id - b.id; });
+      out.capped = out.length > 0 && out[0].ts > startTs + 1000;
+      return out;
+    })();
+  }
 
   // ---- WebSocket -----------------------------------------------------------------------------
   // handlers: { onTrade(t), onDepth(book), onStatus(state, text), onReconnect() }
