@@ -63,8 +63,8 @@
 
   // ---- Market --------------------------------------------------------------------------------
   function Market(opts) {
-    var saved = 'binance';
-    try { saved = OF.storage.get('marketSource', 'binance'); } catch (e) {}
+    var saved = 'bybit';
+    try { saved = OF.storage.get('marketSource', 'bybit'); } catch (e) {}
     this.source = saved;
     this.onSourceChange = (opts && opts.onSourceChange) || function () {};
     this.connId = 0;
