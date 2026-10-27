@@ -319,7 +319,8 @@
     var cx = left + candleW + 1, cw = w - candleW - 1;
     if (cw < 1) return;
     var rowH = this.view.rowH, hh = Math.max(1, rowH >= 6 ? rowH - 1 : rowH);
-    var showText = rowH >= 9;
+    var showText = rowH >= 8;
+    var condensed = rowH < 13; // compact: delta only instead of bid×ask
     var mode = this.mode, mid = cx + cw / 2;
     var showImb = this.showImb;
     var avgCellVol = 0;
@@ -359,10 +360,10 @@
       }
       if (!showText) continue;
       var ty = yTop + hh / 2 + 0.5;
-      if (mode === 'bidask') {
+      ctx.fillStyle = sh.text;
+      if (mode === 'bidask' && !condensed) {
         var lt = U.fmtQty(c.bid), rt = U.fmtQty(c.ask);
         if (Math.max(lt.length, rt.length) * charW * 2 + 10 > cw) continue;
-        ctx.fillStyle = sh.text;
         ctx.textAlign = 'right';
         if (showImb && (im === 'sell' || im === 'both')) ctx.font = 'bold ' + font + 'px ' + MONO;
         ctx.fillText(lt, mid - 4, ty);
@@ -373,15 +374,16 @@
         ctx.font = font + 'px ' + MONO;
         if (cw > (lt.length + rt.length + 1) * charW + 14) { ctx.textAlign = 'center'; ctx.fillText('×', mid, ty); }
       } else {
+        // condensed: single value — delta for bidask mode, otherwise per-mode value
         var delta = c.ask - c.bid, total = c.bid + c.ask;
         var txt;
-        if (mode === 'delta') txt = (delta > 0 ? '+' : '') + U.fmtQty(delta);
-        else if (mode === 'delta%') txt = (delta > 0 ? '+' : '') + (total > 0 ? (delta / total * 100).toFixed(0) : '0') + '%';
+        if (mode === 'bidask') txt = (delta >= 0 ? '+' : '') + U.fmtQty(delta);
+        else if (mode === 'delta') txt = (delta >= 0 ? '+' : '') + U.fmtQty(delta);
+        else if (mode === 'delta%') txt = (delta >= 0 ? '+' : '') + (total > 0 ? (delta / total * 100).toFixed(0) : '0') + '%';
         else if (mode === 'bid') txt = U.fmtQty(c.bid);
         else if (mode === 'ask') txt = U.fmtQty(c.ask);
         else txt = U.fmtQty(total);
-        if (txt.length * charW + 6 > cw) continue;
-        ctx.fillStyle = sh.text;
+        if (txt.length * charW + 4 > cw) continue;
         ctx.textAlign = 'center';
         ctx.fillText(txt, mid, ty);
       }
@@ -563,6 +565,10 @@
       if (y < 6 || y > L.chartH - 6) continue;
       ctx.fillText(U.fmtPrice(j * S.pStep, S.pDec), L.axisX + 4, y);
     }
+    // Drag-to-zoom hint: three horizontal dots at top of axis
+    ctx.fillStyle = 'rgba(148,163,184,0.30)';
+    var hx = L.axisX + L.axisW / 2, hy = 10;
+    for (var di = -1; di <= 1; di++) ctx.fillRect(hx + di * 5 - 1, hy - 1, 2, 2);
     if (S.last) {
       var lb = this.engine.bars[S.n - 1];
       this._axisTag(L, S.yOf(S.last), U.fmtPrice(S.last, S.dec), lb && lb.c < lb.o ? this.bear : this.bull);
@@ -822,6 +828,11 @@
       if (self.ptrs.size === 1) {
         var hit = self._hitLine(p);
         if (hit) { self.drag = { type: 'line', line: hit }; return; }
+        // Price axis drag → vertical zoom
+        if (self.L && p.x >= self.L.axisX) {
+          self.drag = { type: 'yZoom', y0: p.y, rh0: self.view.rowH };
+          return;
+        }
         self.drag = { type: 'pending', x0: p.x, y0: p.y, off0: self.view.offset, c0: self.view.center, mouse: ev.pointerType === 'mouse' };
         if (ev.pointerType !== 'mouse') {
           self.lpTimer = setTimeout(function () {
@@ -846,6 +857,10 @@
         return;
       }
       self.ptrs.set(ev.pointerId, p);
+      // Update cursor when hovering over price axis
+      if (ev.pointerType === 'mouse' && !self.drag) {
+        c.style.cursor = (self.L && p.x >= self.L.axisX) ? 'ns-resize' : '';
+      }
       if (self.pinch && self.ptrs.size >= 2) {
         var pts = Array.from(self.ptrs.values()), pi = self.pinch;
         var dx = Math.abs(pts[0].x - pts[1].x), dy = Math.abs(pts[0].y - pts[1].y);
@@ -859,6 +874,12 @@
       if (d.type === 'line') {
         d.line.price = U.roundToTick(self.S.priceAt(U.clamp(p.y, 0, self.L.chartH)), self.engine.tick);
         if (self.onLineDrag) self.onLineDrag(d.line.id, d.line.price);
+        self.markDirty();
+        return;
+      }
+      if (d.type === 'yZoom') {
+        self.view.rowH = U.clamp(d.rh0 * Math.pow(1.018, -(p.y - d.y0)), 2, 80);
+        c.style.cursor = 'ns-resize';
         self.markDirty();
         return;
       }
@@ -888,6 +909,7 @@
       var d = self.drag;
       self.ptrs.delete(ev.pointerId);
       clearTimeout(self.lpTimer);
+      if (d && d.type === 'yZoom') { self.drag = null; c.style.cursor = ''; return; }
       if (self.pinch) { if (self.ptrs.size < 2) self.pinch = null; self.drag = null; return; }
       if (d && d.type === 'line') {
         if (self.onLineDragEnd) self.onLineDragEnd(d.line.id, d.line.price);
@@ -922,8 +944,9 @@
     });
     c.addEventListener('wheel', function (ev) {
       ev.preventDefault();
-      var f = ev.deltaY < 0 ? 1.1 : 1 / 1.1;
-      if (ev.shiftKey || ev.ctrlKey || ev.altKey) self.view.rowH = U.clamp(self.view.rowH * f, 2, 64);
+      var p = self._pos(ev), f = ev.deltaY < 0 ? 1.1 : 1 / 1.1;
+      if ((self.L && p.x >= self.L.axisX) || ev.shiftKey || ev.ctrlKey || ev.altKey)
+        self.view.rowH = U.clamp(self.view.rowH * f, 2, 80);
       else self.view.barW = U.clamp(self.view.barW * f, 3, 240);
       self.markDirty();
     }, { passive: false });
