@@ -94,10 +94,10 @@
     //            Steps: AdMob → Apps → Add app → Get App ID
     //                   AdMob → Apps → [your app] → Ad units → Create Banner / Interstitial / Rewarded
     ADMOB: {
-      APP_ID:       'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX',   // ▼ Your AdMob App ID
-      BANNER:       'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',   // ▼ Banner ad unit ID
-      INTERSTITIAL: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',   // ▼ Interstitial ad unit ID
-      REWARDED:     'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',   // ▼ Rewarded ad unit ID
+      APP_ID:       'ca-app-pub-8763778830789975~3414652232',
+      BANNER:       'ca-app-pub-8763778830789975/4843496002',
+      INTERSTITIAL: 'ca-app-pub-8763778830789975/1798318231',
+      REWARDED:     'ca-app-pub-8763778830789975/7557289255',
       TESTING: false
     },
     BANNER_HEIGHT: 50,
