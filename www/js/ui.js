@@ -28,6 +28,7 @@
     bindRotate();
     bindStudy();
     bindAlerts();
+    bindRiskDisclaimer();
     $('aboutVersion').textContent = 'v' + C.VERSION;
     $('privacyLink').href = C.PRIVACY_POLICY_URL;
     $('affiliates').innerHTML = app.monet.affiliateHTML();
@@ -41,6 +42,7 @@
     UI.updateLayout();
     UI.refreshPro();
     UI.renderPaper(true);
+    checkRiskDisclaimer();
   };
 
   // ---- Toolbar -------------------------------------------------------------------------------
@@ -113,12 +115,14 @@
       e.stopPropagation();
       var hidden = pop.classList.toggle('hidden');
       btn.classList.toggle('active-tool', !hidden);
+      btn.setAttribute('aria-expanded', !hidden ? 'true' : 'false');
       if (!hidden) syncIndicatorPopover();
     });
     document.addEventListener('pointerdown', function (e) {
       if (!pop.classList.contains('hidden') && !pop.contains(e.target) && e.target !== btn) {
         pop.classList.add('hidden');
         btn.classList.remove('active-tool');
+        btn.setAttribute('aria-expanded', 'false');
       }
     }, { capture: true, passive: true });
     IND_ITEMS.forEach(function (item) {
@@ -139,12 +143,37 @@
     var shown = S.get('watchVisible', false);
     strip.classList.toggle('hidden', !shown);
     $('btnWatch').classList.toggle('active-tool', shown);
+    $('btnWatch').setAttribute('aria-expanded', shown ? 'true' : 'false');
     $('btnWatch').addEventListener('click', function () {
       var nowShown = strip.classList.toggle('hidden') === false;
       S.set('watchVisible', nowShown);
       $('btnWatch').classList.toggle('active-tool', nowShown);
+      $('btnWatch').setAttribute('aria-expanded', nowShown ? 'true' : 'false');
       setTimeout(function () { app.renderer.resize(); }, 0);
     });
+  }
+
+  // ---- Risk disclaimer -----------------------------------------------------------------------
+  function bindRiskDisclaimer() {
+    var cks = [$('riskCk1'), $('riskCk2'), $('riskCk3')];
+    var btn = $('btnRiskAccept');
+    function updateBtn() {
+      var allChecked = cks.every(function (c) { return c.checked; });
+      btn.disabled = !allChecked;
+    }
+    cks.forEach(function (c) { c.addEventListener('change', updateBtn); });
+    btn.addEventListener('click', function () {
+      if (cks.every(function (c) { return c.checked; })) {
+        try { window.localStorage.setItem(C.RISK_ACCEPTED_KEY, '1'); } catch (e) { /* ignore */ }
+        close('mRisk');
+      }
+    });
+  }
+
+  function checkRiskDisclaimer() {
+    var accepted = false;
+    try { accepted = !!window.localStorage.getItem(C.RISK_ACCEPTED_KEY); } catch (e) { /* ignore */ }
+    if (!accepted) open('mRisk');
   }
 
   // ---- Status --------------------------------------------------------------------------------
@@ -462,7 +491,7 @@
 
   function bindModals() {
     document.querySelectorAll('.modal-back').forEach(function (m) {
-      m.addEventListener('click', function (e) { if (e.target === m && m.id !== 'mMockAd' && m.id !== 'mConfirm') close(m.id); });
+      m.addEventListener('click', function (e) { if (e.target === m && m.id !== 'mMockAd' && m.id !== 'mConfirm' && m.id !== 'mRisk') close(m.id); });
       m.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', function () { close(m.id); }); });
     });
     $('btnCopyCSV').addEventListener('click', function () {

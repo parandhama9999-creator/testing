@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -32,7 +32,7 @@ input[type=number] { width: 100%; }
 #topbar { flex: 0 0 auto; height: var(--top-h); display: flex; gap: 6px; align-items: center; padding: 0 8px; overflow-x: auto;
   background: var(--panel); border-bottom: 1px solid var(--border); scrollbar-width: none; white-space: nowrap; }
 #topbar::-webkit-scrollbar { display: none; }
-#topbar select, #topbar button { height: 30px; flex: 0 0 auto; }
+#topbar select, #topbar button { height: 36px; flex: 0 0 auto; min-width: 36px; }
 #topbar button { padding: 0 9px; }
 .brand { font-weight: 800; letter-spacing: .3px; margin-right: 2px; }
 .brand span { color: var(--accent); }
@@ -152,6 +152,25 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
 .alert-row .a-price { font-weight: 700; }
 .alert-row .a-trig { color: var(--bull); font-size: 10px; }
 .alert-row button { padding: 0 6px; height: 20px; font-size: 11px; }
+
+/* Accessibility */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+button:focus:not(:focus-visible), select:focus:not(:focus-visible) { outline: none; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  #toast { transition: none !important; }
+}
+
+/* Risk notice bar */
+#riskBar { flex: 0 0 auto; background: #1a0f00; border-bottom: 1px solid #7c4a0e; padding: 3px 10px;
+  font-size: 10px; color: #fbbf24; text-align: center; letter-spacing: .01em; }
+
+/* Risk disclaimer modal */
+#mRisk .modal { max-width: 400px; }
+#mRisk .risk-checks { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+#mRisk .risk-checks label { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; cursor: pointer; color: var(--text); flex-direction: row; }
+#mRisk .risk-checks input[type=checkbox] { flex: 0 0 auto; margin-top: 2px; width: 16px; height: 16px; }
+#btnRiskAccept:disabled { opacity: .35; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -162,14 +181,14 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
     <select id="selTf" aria-label="Timeframe"></select>
     <input type="number" id="inBin" min="0.0001" step="any" style="width:64px;height:30px;flex:0 0 auto" aria-label="Bin size" inputmode="decimal" title="Footprint bin size (price units)">
     <select id="selMode" aria-label="Cluster mode"></select>
-    <button id="btnDraw" title="Draw horizontal line" style="padding:0 8px">✏️</button>
-    <button id="btnIndicators" title="Indicators">📊</button>
-    <button id="btnWatch" title="Watchlist">📋</button>
-    <button id="btnRotate" title="Rotate (long-press to unlock)">🔄</button>
-    <button id="btnStudy" title="Study / Replay">📼</button>
-    <button id="btnSettings" title="Settings">⚙️</button>
-    <button id="btnPro">⭐ Pro</button>
-    <button id="btnAbout" title="About">ℹ️</button>
+    <button id="btnDraw" title="Draw horizontal line" aria-label="Draw horizontal line" style="padding:0 8px">✏️</button>
+    <button id="btnIndicators" title="Indicators" aria-label="Indicators" aria-haspopup="true" aria-expanded="false">📊</button>
+    <button id="btnWatch" title="Watchlist" aria-label="Toggle watchlist" aria-expanded="false">📋</button>
+    <button id="btnRotate" title="Rotate (long-press to unlock)" aria-label="Rotate chart">🔄</button>
+    <button id="btnStudy" title="Study / Replay" aria-label="Study and replay">📼</button>
+    <button id="btnSettings" title="Settings" aria-label="Settings">⚙️</button>
+    <button id="btnPro" aria-label="Upgrade to Pro">⭐ Pro</button>
+    <button id="btnAbout" title="About" aria-label="About this app">ℹ️</button>
   </header>
   <div id="indPopover" class="hidden">
     <div class="ind-row"><label><input type="checkbox" id="qCVD"> CVD</label></div>
@@ -186,10 +205,11 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
     <span id="lastPrice">—</span>
     <span class="simtag">Paper trading · Simulated — no real money</span>
   </div>
+  <div id="riskBar" role="note" aria-label="Risk notice">⚠ Crypto derivatives carry substantial risk of loss. This is an educational tool only — not financial advice.</div>
   <div id="watchStrip" class="hidden"></div>
   <main id="main">
     <section id="chartWrap">
-      <canvas id="chart"></canvas>
+      <canvas id="chart" role="img" aria-label="Footprint chart"></canvas>
       <div id="demoBanner">Demo data — loading live market…</div>
       <div id="studyOverlay" class="hidden">
         <span class="study-badge">REPLAY</span>
@@ -265,8 +285,8 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
   <footer id="adArea"><div id="adSep"></div><div id="adSlot"></div></footer>
 </div>
 
-<div class="modal-back" id="mSettings"><div class="modal">
-  <h3>Settings <button data-close>✕</button></h3>
+<div class="modal-back" id="mSettings" role="dialog" aria-modal="true" aria-labelledby="mSettingsTitle"><div class="modal">
+  <h3 id="mSettingsTitle">Settings <button data-close aria-label="Close settings">✕</button></h3>
   <div class="grid2">
     <label>App theme<select id="setAppTheme">
       <option value="dark">Dark</option>
@@ -313,40 +333,56 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
   <button id="btnResetSettings" class="warn wide">Reset to defaults</button>
 </div></div>
 
-<div class="modal-back" id="mPaywall"><div class="modal">
-  <h3>⭐ OrderFlow Pro <button data-close>✕</button></h3>
+<div class="modal-back" id="mPaywall" role="dialog" aria-modal="true" aria-labelledby="mPaywallTitle"><div class="modal">
+  <h3 id="mPaywallTitle">⭐ OrderFlow Pro <button data-close aria-label="Close">✕</button></h3>
   <div class="small muted">Pro removes ads, unlocks 10x/25x bins and unlimited whale alerts.</div>
   <div id="productList"></div>
   <div class="grid2"><button id="btnRestore">Restore Purchases</button><button id="btnRevokeMock" class="hidden">Revoke (mock)</button></div>
   <div id="payStatus" class="small muted"></div>
 </div></div>
 
-<div class="modal-back" id="mAbout"><div class="modal">
-  <h3>About <button data-close>✕</button></h3>
+<div class="modal-back" id="mAbout" role="dialog" aria-modal="true" aria-labelledby="mAboutTitle"><div class="modal">
+  <h3 id="mAboutTitle">About <button data-close aria-label="Close about">✕</button></h3>
   <p><b>OrderFlow Crypto Pro</b> <span id="aboutVersion" class="muted"></span></p>
-  <p>Educational tool. Not financial advice. Market data from public exchange feeds.</p>
-  <p>Paper trading is simulated — no real money, no real orders, no exchange account.</p>
+  <p><strong>Educational tool only. Not financial advice.</strong> Market data sourced from public exchange feeds (Binance Futures, Bybit Linear). Data may be delayed or inaccurate.</p>
+  <p>Paper trading is fully simulated — no real money, no real orders, no exchange account required.</p>
+  <p><strong>Risk warning:</strong> Cryptocurrency derivatives (perpetual futures) carry a <strong>high risk of rapid and substantial financial loss</strong>. You can lose more than your initial deposit. Only trade with money you can afford to lose. Past performance is not indicative of future results.</p>
+  <p>This app is not licensed by any financial regulator. It does not provide investment advice. You are solely responsible for your trading decisions. Some features may not be available in your jurisdiction.</p>
   <p><a id="privacyLink" href="#" target="_blank" rel="noopener" style="color:#93c5fd">Privacy policy</a></p>
   <div id="affiliates"></div>
 </div></div>
 
-<div class="modal-back" id="mConfirm"><div class="modal">
+<div class="modal-back" id="mConfirm" role="dialog" aria-modal="true" aria-labelledby="confirmMsg"><div class="modal">
   <p id="confirmMsg"></p>
   <div class="grid2"><button id="confirmNo">Cancel</button><button id="confirmYes" class="warn">OK</button></div>
 </div></div>
 
-<div class="modal-back" id="mMockAd"><div class="modal">
-  <h3><span id="mockAdTitle">Ad (mock)</span> <button id="mockAdClose">✕</button></h3>
+<div class="modal-back" id="mMockAd" role="dialog" aria-modal="true"><div class="modal">
+  <h3><span id="mockAdTitle">Ad (mock)</span> <button id="mockAdClose" aria-label="Close ad">✕</button></h3>
   <div class="mock-full" id="mockAdBody"></div>
 </div></div>
 
-<div class="modal-back" id="mCSV"><div class="modal">
-  <h3>Trade history CSV <button data-close>✕</button></h3>
-  <textarea id="csvText" readonly></textarea>
+<div class="modal-back" id="mCSV" role="dialog" aria-modal="true" aria-labelledby="mCSVTitle"><div class="modal">
+  <h3 id="mCSVTitle">Trade history CSV <button data-close aria-label="Close">✕</button></h3>
+  <textarea id="csvText" readonly aria-label="Trade history CSV data"></textarea>
   <button id="btnCopyCSV" class="wide">Copy to clipboard</button>
 </div></div>
 
-<div id="toast"></div>
+<div class="modal-back" id="mRisk" role="dialog" aria-modal="true" aria-labelledby="mRiskTitle"><div class="modal">
+  <h3 id="mRiskTitle" style="font-size:15px">⚠ Important Risk Disclosure</h3>
+  <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Please read and accept before using this app.</p>
+  <p style="font-size:12px;margin:0 0 8px"><strong>This app is an educational tool only.</strong> It does not provide financial, investment or trading advice. It is not regulated by any financial authority.</p>
+  <p style="font-size:12px;margin:0 0 8px">Cryptocurrency derivatives involve a <strong>high risk of rapid and substantial financial loss</strong>. You may lose more than your initial deposit. Only risk capital you can afford to lose.</p>
+  <p style="font-size:12px;margin:0 0 12px">Market data may be delayed, inaccurate, or unavailable. Past signals are not indicative of future results. Some features may be unavailable or illegal in your jurisdiction.</p>
+  <div class="risk-checks">
+    <label><input type="checkbox" id="riskCk1"> I understand this app is for <strong>educational purposes only</strong> and provides no financial advice.</label>
+    <label><input type="checkbox" id="riskCk2"> I understand crypto derivatives carry a <strong>high risk of financial loss</strong> and I will only risk money I can afford to lose.</label>
+    <label><input type="checkbox" id="riskCk3"> I confirm I am of legal age and this app is available in my jurisdiction.</label>
+  </div>
+  <button id="btnRiskAccept" class="wide" disabled>I Understand — Continue</button>
+</div></div>
+
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script defer src="js/config.js"></script>
 <script defer src="js/storage.js"></script>

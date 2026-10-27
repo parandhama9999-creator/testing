@@ -177,7 +177,11 @@
     AFFILIATES: [
       { name: 'Binance', url: 'https://www.binance.com/', blurb: 'Global crypto exchange.' },
       { name: 'Bybit', url: 'https://www.bybit.com/', blurb: 'Crypto derivatives exchange.' }
-    ]
+    ],
+
+    // ---- Legal / compliance ------------------------------------------------------------------
+    // Bump the version suffix to force all users to re-accept after a policy change.
+    RISK_ACCEPTED_KEY: 'riskAcceptedV1'
   };
 
   // ---- Shared helpers ----------------------------------------------------------------------
@@ -217,14 +221,24 @@
   U.fmtUsd = function (v, dec) {
     if (v == null || !isFinite(v)) return '—';
     var d = dec == null ? 2 : dec;
-    var s = Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-    return (v < 0 ? '-$' : '$') + s;
+    try {
+      return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: d, maximumFractionDigits: d }).format(v);
+    } catch (e) {
+      var s = Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+      return (v < 0 ? '-$' : '$') + s;
+    }
   };
 
   U.fmtTime = function (ts, withSec) {
-    var d = new Date(ts);
-    var hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
-    return withSec ? hh + ':' + mm + ':' + String(d.getSeconds()).padStart(2, '0') : hh + ':' + mm;
+    try {
+      var opts = { hour: '2-digit', minute: '2-digit', hour12: false };
+      if (withSec) opts.second = '2-digit';
+      return new Intl.DateTimeFormat(undefined, opts).format(new Date(ts));
+    } catch (e) {
+      var d = new Date(ts);
+      var hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
+      return withSec ? hh + ':' + mm + ':' + String(d.getSeconds()).padStart(2, '0') : hh + ':' + mm;
+    }
   };
 
   U.today = function () {
