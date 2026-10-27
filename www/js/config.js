@@ -15,8 +15,7 @@
     DEBUG_MOCK_BILLING: false,
     // Affiliate cards — keep false until financial services policy reviewed per target country.
     ENABLE_AFFILIATES: false,
-    // ▼ REPLACE before submitting to Play Console — must be a real hosted URL.
-    PRIVACY_POLICY_URL: 'https://example.com/orderflow-crypto-pro/privacy',
+    PRIVACY_POLICY_URL: 'https://docs.google.com/document/d/e/2PACX-1vSSDXRxh16FEgAm6Ayoc83nL8sVucPxXvMW4oQkz-uz2x3hMhsc712KDZQaeQI7n7ZfewJ_z-f_yCoe/pub',
 
     // ---- Market --------------------------------------------------------------------------
     SYMBOLS: [
