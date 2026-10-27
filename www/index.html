@@ -8,7 +8,7 @@
 <style>
 :root {
   --bg: #0b0f17; --panel: #111827; --panel2: #1f2937; --border: #273244; --text: #e5e7eb; --muted: #94a3b8;
-  --accent: #f59e0b; --bull: #10b981; --bear: #ef4444; --ad-h: 54px; --top-h: 42px;
+  --accent: #f59e0b; --bull: #10b981; --bear: #ef4444; --ad-h: 28px; --top-h: 42px;
 }
 :root[data-theme="light"] {
   --bg: #f0f4f8; --panel: #ffffff; --panel2: #e8edf5; --border: #c9d4e3; --text: #111827; --muted: #4b5563;
@@ -76,9 +76,9 @@ button.wide { width: 100%; margin-top: 6px; }
 .whale .buy { color: var(--bull); font-weight: 700; } .whale .sell { color: var(--bear); font-weight: 700; }
 
 #adArea { flex: 0 0 auto; height: var(--ad-h); display: flex; flex-direction: column; }
-#adSep { height: 4px; background: #05080d; border-top: 1px solid var(--border); }
+#adSep { height: 1px; background: var(--border); }
 #adSlot { flex: 1; display: flex; align-items: center; justify-content: center; }
-.mock-ad { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #1e293b; color: var(--muted); font-size: 11px; border: 1px dashed #475569; }
+.mock-ad { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #131c2e; color: var(--muted); font-size: 10px; }
 body.pro #adArea { display: none; }
 
 /* Compact (landscape phones, or forced when orientation lock is unavailable) */
@@ -118,6 +118,18 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
   overflow-x: auto; background: #0d1420; border-bottom: 1px solid var(--border);
   scrollbar-width: none; white-space: nowrap; height: 26px; }
 #watchStrip::-webkit-scrollbar { display: none; }
+#watchStrip.hidden { display: none !important; }
+
+/* Indicators popover */
+#indPopover { position: fixed; top: calc(env(safe-area-inset-top,0px) + var(--top-h) + 4px); right: 8px;
+  z-index: 45; background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 14px; min-width: 176px; box-shadow: 0 6px 24px rgba(0,0,0,.6); }
+#indPopover.hidden { display: none !important; }
+.ind-row { display: flex; align-items: center; gap: 8px; padding: 4px 0;
+  font-size: 12px; border-bottom: 1px solid var(--border); }
+.ind-row:last-child { border-bottom: 0; }
+.ind-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text); flex: 1; }
+.ind-row input[type=number] { width: 44px; height: 22px; padding: 1px 4px; font-size: 11px; margin-left: auto; }
 .wchip { flex: 0 0 auto; background: transparent; border: 1px solid #1e2d42; border-radius: 4px;
   padding: 0 5px; font-size: 10px; cursor: pointer; font-variant-numeric: tabular-nums;
   color: var(--muted); height: 20px; line-height: 20px; }
@@ -151,18 +163,30 @@ textarea { width: 100%; height: 200px; background: #05080d; color: var(--text); 
     <input type="number" id="inBin" min="0.0001" step="any" style="width:64px;height:30px;flex:0 0 auto" aria-label="Bin size" inputmode="decimal" title="Footprint bin size (price units)">
     <select id="selMode" aria-label="Cluster mode"></select>
     <button id="btnDraw" title="Draw horizontal line" style="padding:0 8px">✏️</button>
+    <button id="btnIndicators" title="Indicators">📊</button>
+    <button id="btnWatch" title="Watchlist">📋</button>
     <button id="btnRotate" title="Rotate (long-press to unlock)">🔄</button>
     <button id="btnStudy" title="Study / Replay">📼</button>
     <button id="btnSettings" title="Settings">⚙️</button>
     <button id="btnPro">⭐ Pro</button>
     <button id="btnAbout" title="About">ℹ️</button>
   </header>
+  <div id="indPopover" class="hidden">
+    <div class="ind-row"><label><input type="checkbox" id="qCVD"> CVD</label></div>
+    <div class="ind-row"><label><input type="checkbox" id="qVol"> Volume bars</label></div>
+    <div class="ind-row"><label><input type="checkbox" id="qMatrix"> Order matrix</label></div>
+    <div class="ind-row"><label><input type="checkbox" id="qVWAP"> VWAP</label></div>
+    <div class="ind-row"><label><input type="checkbox" id="qCPR"> CPR</label></div>
+    <div class="ind-row"><label><input type="checkbox" id="qSMA"> SMA<input type="number" id="qSmaPeriod" min="2" max="200" value="20"></label></div>
+    <div class="ind-row"><label><input type="checkbox" id="qEMA"> EMA<input type="number" id="qEmaPeriod" min="2" max="200" value="9"></label></div>
+    <div class="ind-row"><label><input type="checkbox" id="qSessions"> Sessions</label></div>
+  </div>
   <div id="statusbar">
     <span id="srcStatus" class="connecting">Connecting…</span>
     <span id="lastPrice">—</span>
     <span class="simtag">Paper trading · Simulated — no real money</span>
   </div>
-  <div id="watchStrip"></div>
+  <div id="watchStrip" class="hidden"></div>
   <main id="main">
     <section id="chartWrap">
       <canvas id="chart"></canvas>

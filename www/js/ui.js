@@ -18,6 +18,8 @@
     buildSelects();
     bindTopbar();
     buildWatchStrip();
+    bindIndicators();
+    bindWatchToggle();
     bindPanel();
     bindTrade();
     bindSettings();
@@ -84,6 +86,65 @@
     $('btnSettings').addEventListener('click', UI.openSettings);
     $('btnPro').addEventListener('click', UI.openPaywall);
     $('btnAbout').addEventListener('click', function () { open('mAbout'); });
+  }
+
+  // ---- Indicators popover --------------------------------------------------------------------
+  var IND_ITEMS = [
+    { id: 'qCVD',      key: 'showCVD',      resize: true },
+    { id: 'qVol',      key: 'showVolBars',   resize: true },
+    { id: 'qMatrix',   key: 'showMatrix',    resize: true },
+    { id: 'qVWAP',     key: 'showVWAP' },
+    { id: 'qCPR',      key: 'showCPR' },
+    { id: 'qSMA',      key: 'showSMA' },
+    { id: 'qEMA',      key: 'showEMA' },
+    { id: 'qSessions', key: 'showSessions' }
+  ];
+
+  function syncIndicatorPopover() {
+    var s = app.settings;
+    IND_ITEMS.forEach(function (item) { $( item.id).checked = !!s[item.key]; });
+    $('qSmaPeriod').value = s.smaPeriod != null ? s.smaPeriod : 20;
+    $('qEmaPeriod').value = s.emaPeriod != null ? s.emaPeriod : 9;
+  }
+
+  function bindIndicators() {
+    var pop = $('indPopover'), btn = $('btnIndicators');
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var hidden = pop.classList.toggle('hidden');
+      btn.classList.toggle('active-tool', !hidden);
+      if (!hidden) syncIndicatorPopover();
+    });
+    document.addEventListener('pointerdown', function (e) {
+      if (!pop.classList.contains('hidden') && !pop.contains(e.target) && e.target !== btn) {
+        pop.classList.add('hidden');
+        btn.classList.remove('active-tool');
+      }
+    }, { capture: true, passive: true });
+    IND_ITEMS.forEach(function (item) {
+      $(item.id).addEventListener('change', function (e) {
+        var patch = {};
+        patch[item.key] = e.target.checked;
+        app.updateSettings(patch);
+        if (item.resize) setTimeout(function () { app.renderer.resize(); }, 0);
+      });
+    });
+    $('qSmaPeriod').addEventListener('change', function (e) { app.updateSettings({ smaPeriod: Math.max(2, +e.target.value || 20) }); });
+    $('qEmaPeriod').addEventListener('change', function (e) { app.updateSettings({ emaPeriod: Math.max(2, +e.target.value || 9) }); });
+  }
+
+  // ---- Watchlist strip toggle ----------------------------------------------------------------
+  function bindWatchToggle() {
+    var strip = $('watchStrip');
+    var shown = S.get('watchVisible', false);
+    strip.classList.toggle('hidden', !shown);
+    $('btnWatch').classList.toggle('active-tool', shown);
+    $('btnWatch').addEventListener('click', function () {
+      var nowShown = strip.classList.toggle('hidden') === false;
+      S.set('watchVisible', nowShown);
+      $('btnWatch').classList.toggle('active-tool', nowShown);
+      setTimeout(function () { app.renderer.resize(); }, 0);
+    });
   }
 
   // ---- Status --------------------------------------------------------------------------------
