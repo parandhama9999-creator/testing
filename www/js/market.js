@@ -63,7 +63,9 @@
 
   // ---- Market --------------------------------------------------------------------------------
   function Market(opts) {
-    this.source = 'binance';
+    var saved = 'binance';
+    try { saved = OF.storage.get('marketSource', 'binance'); } catch (e) {}
+    this.source = saved;
     this.onSourceChange = (opts && opts.onSourceChange) || function () {};
     this.connId = 0;
     this.ws = null;
@@ -85,11 +87,15 @@
     if (this.source === src) return;
     console.warn('[market] switching data source to', src, '-', reason);
     this.source = src;
+    try { OF.storage.set('marketSource', src); } catch (e) {}
     this.onSourceChange(src, reason);
   };
 
   P._shouldFallback = function (err) {
-    return this.source === 'binance' && !!err && (err.status === 451 || err.status === 403 || err.network === true);
+    if (this.source !== 'binance' || !err) return false;
+    if (err.network === true) return true;
+    var s = err.status;
+    return s === 403 || s === 451 || s === 503 || s === 521 || s === 522 || s === 523 || s === 524;
   };
 
   // Run fn(source); on a geo-block style failure from Binance, switch to Bybit and retry once.
@@ -99,8 +105,8 @@
       return await fn(src);
     } catch (err) {
       if (src === 'binance' && this._shouldFallback(err)) {
-        this.source = 'bybit';
-        console.warn('[market] Binance REST unavailable (' + err.message + '), using Bybit');
+        console.warn('[market] Binance REST unavailable (' + (err && err.message) + '), switching to Bybit');
+        this.switchSource('bybit', 'Binance REST blocked');
         return await fn('bybit');
       }
       throw err;
