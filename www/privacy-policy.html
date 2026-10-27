@@ -1,0 +1,360 @@
+<title>Privacy Policy — OrderFlow Crypto Pro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+  :root {
+    --bg:      #ffffff;
+    --surface: #f8fafc;
+    --border:  #e2e8f0;
+    --fg:      #0f172a;
+    --muted:   #475569;
+    --faint:   #94a3b8;
+    --accent:  #0f6b45;
+    --accent-l:#dcfce7;
+    --link:    #0369a1;
+    --warn-bg: #fffbeb;
+    --warn-b:  #fbbf24;
+    --warn-fg: #92400e;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:      #0b1120;
+      --surface: #111827;
+      --border:  #1e293b;
+      --fg:      #f1f5f9;
+      --muted:   #94a3b8;
+      --faint:   #475569;
+      --accent:  #10b981;
+      --accent-l:rgba(16,185,129,0.12);
+      --link:    #38bdf8;
+      --warn-bg: rgba(251,191,36,0.08);
+      --warn-b:  #d97706;
+      --warn-fg: #fcd34d;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:      #0b1120;
+    --surface: #111827;
+    --border:  #1e293b;
+    --fg:      #f1f5f9;
+    --muted:   #94a3b8;
+    --faint:   #475569;
+    --accent:  #10b981;
+    --accent-l:rgba(16,185,129,0.12);
+    --link:    #38bdf8;
+    --warn-bg: rgba(251,191,36,0.08);
+    --warn-b:  #d97706;
+    --warn-fg: #fcd34d;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    margin: 0;
+    padding-block: 48px 80px;
+    padding-left:  max(16px, env(safe-area-inset-left,  0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 740px; margin: 0 auto; }
+
+  /* Header */
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .app-logo {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #0d2040, #040c1a);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #10b981;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+    border: 1px solid rgba(16,185,129,0.25);
+  }
+  .app-name { font-size: 1.05rem; font-weight: 700; color: var(--fg); }
+  .app-sub  { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+  h1 {
+    font-family: 'Merriweather', Georgia, serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0 0 10px;
+    text-wrap: balance;
+    color: var(--fg);
+  }
+  .meta {
+    font-size: 0.78rem;
+    color: var(--faint);
+    margin-bottom: 36px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .meta span::before { content: '· '; }
+  .meta span:first-child::before { content: ''; }
+
+  h2 {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 40px 0 10px;
+    color: var(--fg);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--accent-l);
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  p { margin: 0 0 14px; color: var(--muted); }
+  p:last-child { margin-bottom: 0; }
+  strong { color: var(--fg); font-weight: 600; }
+
+  ul, ol { margin: 0 0 14px; padding-left: 22px; color: var(--muted); }
+  li { margin-bottom: 6px; }
+  li strong { color: var(--fg); }
+
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Summary box */
+  .summary {
+    background: var(--accent-l);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 18px 20px;
+    margin: 0 0 36px;
+  }
+  .summary p { color: var(--fg); margin-bottom: 8px; font-weight: 500; font-size: 0.92rem; }
+  .summary ul { margin-bottom: 0; }
+  .summary li { color: var(--muted); font-size: 0.88rem; }
+
+  /* Warning box */
+  .warn {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-b);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+  }
+  .warn p { color: var(--warn-fg); margin: 0; font-size: 0.88rem; font-weight: 500; }
+
+  /* Table */
+  .tbl-wrap { overflow-x: auto; margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 480px; }
+  th { text-align: left; font-weight: 600; color: var(--fg); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid var(--border); padding: 8px 12px 8px 0; }
+  td { vertical-align: top; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--border); color: var(--muted); }
+  td:first-child { color: var(--fg); font-weight: 500; white-space: nowrap; }
+
+  /* Divider */
+  hr { border: none; border-top: 1px solid var(--border); margin: 44px 0; }
+
+  /* Footer */
+  .footer {
+    margin-top: 56px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--faint);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="app-header">
+    <div class="app-logo">OF</div>
+    <div>
+      <div class="app-name">OrderFlow Crypto Pro</div>
+      <div class="app-sub">com.parandama.orderflow</div>
+    </div>
+  </div>
+
+  <h1>Privacy Policy</h1>
+  <div class="meta">
+    <span>Effective date: 27 October 2025</span>
+    <span>Last updated: 27 October 2025</span>
+    <span>Version 1.0</span>
+  </div>
+
+  <div class="summary">
+    <p>Quick summary — plain English</p>
+    <ul>
+      <li>We <strong>do not collect, store, or share your personal data</strong> on our own servers.</li>
+      <li>All your settings and preferences are saved <strong>only on your device</strong>.</li>
+      <li>Ads are served by <strong>Google AdMob</strong>, which may use your advertising ID.</li>
+      <li>Purchases are handled by <strong>Google Play Billing</strong> — we never see your payment details.</li>
+      <li>Market data is fetched read-only from <strong>Binance and Bybit</strong> — we do not send your data to them.</li>
+      <li>This app is for <strong>analysis only</strong> — it is not financial advice and does not execute trades.</li>
+    </ul>
+  </div>
+
+  <h2><span class="num">1</span> Who We Are</h2>
+  <p>OrderFlow Crypto Pro ("the App", "we", "us", "our") is operated by <strong>Parandama</strong>. If you have any questions about this policy, contact us at <a href="mailto:parandhama9999@gmail.com">parandhama9999@gmail.com</a>.</p>
+
+  <h2><span class="num">2</span> Scope</h2>
+  <p>This Privacy Policy applies to the OrderFlow Crypto Pro Android application (package name <code>com.parandama.orderflow</code>) and any related services. By installing and using the App you agree to the practices described here.</p>
+
+  <h2><span class="num">3</span> Information We Collect</h2>
+  <p>We <strong>do not operate a backend server</strong> and therefore do not collect or receive personal information ourselves. Data is handled as follows:</p>
+
+  <p><strong>Stored only on your device (local storage)</strong></p>
+  <ul>
+    <li>App settings (chart preferences, colour themes, indicator settings)</li>
+    <li>Saved chart templates you create</li>
+    <li>Risk disclaimer acceptance status</li>
+    <li>Paper-trading account state</li>
+    <li>Whale-alert and price-alert preferences</li>
+  </ul>
+  <p>This data never leaves your device and is deleted when you uninstall the App or clear the App's data from Android settings.</p>
+
+  <p><strong>Market data requests</strong></p>
+  <p>The App sends requests to Binance and Bybit public APIs to retrieve live and historical price data. These requests contain only standard HTTP headers (including your IP address and device's user-agent string as set by your operating system). We do not send any personally identifying information in these requests, and we do not store the results on any server.</p>
+
+  <h2><span class="num">4</span> Third-Party Services</h2>
+  <p>The following third parties are integrated into the App and may collect data under their own privacy policies:</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Purpose</th>
+          <th>Data collected by them</th>
+          <th>Privacy policy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Google AdMob</td>
+          <td>Displaying advertisements</td>
+          <td>Advertising ID, device identifiers, interaction data, approximate location (country/region), network type</td>
+          <td><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></td>
+        </tr>
+        <tr>
+          <td>Google Play Billing</td>
+          <td>Processing in-app subscriptions and purchases</td>
+          <td>Purchase history, payment method (handled entirely by Google — we receive only a purchase token)</td>
+          <td><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></td>
+        </tr>
+        <tr>
+          <td>Binance Futures API</td>
+          <td>Real-time and historical price/trade data</td>
+          <td>IP address (via standard HTTPS request), no account data</td>
+          <td><a href="https://www.binance.com/en/privacy" target="_blank">Binance Privacy Policy</a></td>
+        </tr>
+        <tr>
+          <td>Bybit API</td>
+          <td>Fallback real-time and historical price/trade data</td>
+          <td>IP address (via standard HTTPS request), no account data</td>
+          <td><a href="https://www.bybit.com/en/privacy-policy" target="_blank">Bybit Privacy Policy</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>For EU/EEA users, Google AdMob displays a <strong>UMP consent form</strong> on first launch so you can choose whether to allow personalised advertising. Your choice is respected and stored. You can change this preference at any time through the App's settings.</p>
+
+  <h2><span class="num">5</span> Advertising and the Advertising ID</h2>
+  <p>The App uses Google AdMob to display banner, interstitial, and rewarded ads to non-subscribed users. AdMob may use your device's <strong>Android Advertising ID (AAID)</strong> to show relevant ads and measure ad performance. You can:</p>
+  <ul>
+    <li><strong>Reset or opt out</strong> of interest-based advertising at any time via <em>Android Settings → Google → Ads</em>.</li>
+    <li><strong>Purchase a Pro subscription</strong> to remove all ads entirely, in which case AdMob is not loaded.</li>
+  </ul>
+
+  <h2><span class="num">6</span> In-App Purchases and Subscriptions</h2>
+  <p>The App offers optional subscriptions (Pro Monthly, Pro Yearly) and a one-time Pro Lifetime purchase via <strong>Google Play Billing</strong>. All payment processing is handled exclusively by Google. We receive only a non-reversible <em>purchase token</em> confirming the transaction. We never see, process, or store your payment card number or bank details.</p>
+
+  <h2><span class="num">7</span> Data We Do Not Collect</h2>
+  <p>We explicitly do <strong>not</strong> collect:</p>
+  <ul>
+    <li>Your name, email address, or any account credentials</li>
+    <li>Your precise location</li>
+    <li>Your contacts, photos, camera, or microphone data</li>
+    <li>Trading account credentials for any exchange</li>
+    <li>Any data from other apps on your device</li>
+    <li>Crash reports or analytics (there is no analytics SDK in the App)</li>
+  </ul>
+
+  <h2><span class="num">8</span> How We Use Information</h2>
+  <p>Because we collect no personal data ourselves, our use is limited to:</p>
+  <ul>
+    <li>Verifying your purchase status so Pro features unlock correctly (via the Google Play purchase token)</li>
+    <li>Displaying advertisements through AdMob to non-Pro users</li>
+  </ul>
+  <p>We do not sell, rent, or share any user data with any party for any purpose beyond what is described in this policy.</p>
+
+  <h2><span class="num">9</span> Data Retention and Deletion</h2>
+  <p>All local device data is retained until you <strong>uninstall</strong> the App or manually clear its data (<em>Android Settings → Apps → OrderFlow Crypto Pro → Clear data</em>). We have no server-side data to delete on your behalf. If you want to delete data held by Google AdMob or Google Play, see Google's own data deletion tools at <a href="https://myaccount.google.com/delete-services-or-account" target="_blank">myaccount.google.com</a>.</p>
+
+  <h2><span class="num">10</span> Your Rights (GDPR / CCPA / Global)</h2>
+  <p>Depending on where you live, you may have the right to:</p>
+  <ul>
+    <li><strong>Access</strong> data held about you</li>
+    <li><strong>Correct</strong> inaccurate data</li>
+    <li><strong>Delete</strong> your data ("right to be forgotten")</li>
+    <li><strong>Restrict or object</strong> to processing</li>
+    <li><strong>Data portability</strong></li>
+    <li><strong>Withdraw consent</strong> (for personalised ads, via Android settings)</li>
+    <li><strong>Opt out of the sale of personal information</strong> (we do not sell data)</li>
+  </ul>
+  <p>To exercise any of these rights, contact us at <a href="mailto:parandhama9999@gmail.com">parandhama9999@gmail.com</a>. We will respond within 30 days. For data held by Google, please use Google's own account tools.</p>
+
+  <h2><span class="num">11</span> Children's Privacy</h2>
+  <p>This App is intended for users aged <strong>18 and over</strong>. Cryptocurrency derivatives trading involves substantial financial risk that is not appropriate for minors. We do not knowingly collect data from anyone under 13 (or 16 in the EU/EEA). If you believe a child has provided us with personal information, contact us immediately at <a href="mailto:parandhama9999@gmail.com">parandhama9999@gmail.com</a> and we will take steps to delete such information.</p>
+
+  <h2><span class="num">12</span> Security</h2>
+  <p>All communication between the App and third-party APIs (Binance, Bybit, Google) is encrypted via HTTPS/TLS. Because we do not store personal data on our own servers, the risk of a data breach on our end is minimal. Device-local data is protected by Android's standard app sandboxing.</p>
+
+  <h2><span class="num">13</span> International Transfers</h2>
+  <p>By using the App, your device may communicate with servers operated by Google (United States) and Binance/Bybit (various jurisdictions). These transfers are covered by each party's own data transfer mechanisms. For EU users, Google's services are covered by Standard Contractual Clauses and/or adequacy decisions where applicable.</p>
+
+  <h2><span class="num">14</span> Financial Risk Disclaimer</h2>
+  <div class="warn">
+    <p>⚠ OrderFlow Crypto Pro is a <strong>market analysis and visualisation tool only</strong>. It does not provide financial advice, investment recommendations, or trade execution. Cryptocurrency and derivatives trading involves extreme risk of loss and is not suitable for all investors. Past performance does not indicate future results. You are solely responsible for your own trading decisions. Always seek independent financial advice before trading. Regulatory restrictions may apply in your jurisdiction.</p>
+  </div>
+
+  <h2><span class="num">15</span> Changes to This Policy</h2>
+  <p>We may update this Privacy Policy from time to time. When we do, we will update the "Last updated" date at the top of this page. For significant changes we will provide a notice within the App. Continued use of the App after changes constitutes acceptance of the updated policy.</p>
+
+  <h2><span class="num">16</span> Contact Us</h2>
+  <p>If you have any questions, requests, or concerns about this Privacy Policy or your data, please contact:</p>
+  <ul>
+    <li><strong>Developer:</strong> Parandama</li>
+    <li><strong>App:</strong> OrderFlow Crypto Pro</li>
+    <li><strong>Package:</strong> com.parandama.orderflow</li>
+    <li><strong>Email:</strong> <a href="mailto:parandhama9999@gmail.com">parandhama9999@gmail.com</a></li>
+  </ul>
+
+  <hr>
+
+  <div class="footer">
+    <span>© 2025 Parandama. All rights reserved.</span>
+    <span>OrderFlow Crypto Pro</span>
+    <span>Version 1.0 · 27 Oct 2025</span>
+  </div>
+
+</div>
