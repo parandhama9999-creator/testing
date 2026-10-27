@@ -11,17 +11,11 @@
     VERSION: '1.0.0',
 
     // ---- Feature flags -------------------------------------------------------------------
-    // RELEASE CHECKLIST — set to false before shipping any release build.
-    // Simulated purchases are honoured ONLY outside the native app (browser / preview);
-    // a native build always requires a real Google Play Billing purchase, whatever this says.
-    DEBUG_MOCK_BILLING: true,
-    // Affiliate cards (Binance/Bybit). ENABLE_AFFILIATES must stay false unless you have:
-    //   (a) reviewed Google Play's Financial Services policy for your target countries, AND
-    //   (b) confirmed neither exchange is restricted/unlicensed there (e.g. US, UK, Ontario CA).
-    //   Geo-gate the cards or geo-restrict the app listing before enabling.
+    // Set true ONLY for local browser preview; false for any build uploaded to Play Store.
+    DEBUG_MOCK_BILLING: false,
+    // Affiliate cards — keep false until financial services policy reviewed per target country.
     ENABLE_AFFILIATES: false,
-    // RELEASE CHECKLIST — replace with your hosted privacy-policy URL before submitting to Play.
-    // Play Console will reject the app if this is still example.com.
+    // ▼ REPLACE before submitting to Play Console — must be a real hosted URL.
     PRIVACY_POLICY_URL: 'https://example.com/orderflow-crypto-pro/privacy',
 
     // ---- Market --------------------------------------------------------------------------
@@ -96,13 +90,15 @@
       bybit: { rest: 'https://api.bybit.com', ws: 'wss://stream.bybit.com/v5/public/linear' }
     },
 
-    // ---- AdMob: Google's official TEST IDs. Swap for real IDs only for a release (see README).
+    // ---- AdMob: Replace ALL IDs below with your real AdMob IDs from admob.google.com
+    //            Steps: AdMob → Apps → Add app → Get App ID
+    //                   AdMob → Apps → [your app] → Ad units → Create Banner / Interstitial / Rewarded
     ADMOB: {
-      APP_ID: 'ca-app-pub-3940256099942544~3347511713',
-      BANNER: 'ca-app-pub-3940256099942544/9214589741',
-      INTERSTITIAL: 'ca-app-pub-3940256099942544/1033173712',
-      REWARDED: 'ca-app-pub-3940256099942544/5224354917',
-      TESTING: true
+      APP_ID:       'ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX',   // ▼ Your AdMob App ID
+      BANNER:       'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',   // ▼ Banner ad unit ID
+      INTERSTITIAL: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',   // ▼ Interstitial ad unit ID
+      REWARDED:     'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',   // ▼ Rewarded ad unit ID
+      TESTING: false
     },
     BANNER_HEIGHT: 50,
     BANNER_SEPARATOR: 4,
@@ -234,10 +230,11 @@
     if (v == null || !isFinite(v)) return '—';
     var d = dec == null ? 2 : dec;
     try {
-      return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: d, maximumFractionDigits: d }).format(v);
-    } catch (e) {
+      // Always show USD symbol; use device locale for digit grouping only.
       var s = Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
       return (v < 0 ? '-$' : '$') + s;
+    } catch (e) {
+      return (v < 0 ? '-$' : '$') + Math.abs(v).toFixed(d);
     }
   };
 

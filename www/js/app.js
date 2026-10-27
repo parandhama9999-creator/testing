@@ -416,5 +416,21 @@
     }).catch(function () { /* best-effort */ });
   }
 
+  // ---- Global error guards -------------------------------------------------------------------
+  window.addEventListener('unhandledrejection', function (ev) {
+    console.error('[app] unhandled promise rejection:', ev.reason);
+    // Prevent white-screen crash — surface as a toast if UI is ready.
+    try {
+      var msg = ev.reason && ev.reason.message ? ev.reason.message : String(ev.reason);
+      if (OF.ui && OF.ui.toast) OF.ui.toast('Error: ' + msg.slice(0, 80));
+    } catch (e) { /* ignore */ }
+    ev.preventDefault();
+  });
+
+  window.onerror = function (msg, src, line) {
+    console.error('[app] uncaught error:', msg, src, line);
+    return false; // let the default handler also log it
+  };
+
   init();
 })();
