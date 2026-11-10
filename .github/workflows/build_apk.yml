@@ -38,6 +38,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Allow language packs to download on mobile data
+        run: bash scripts/patch_plugins.sh
+
       - name: Copy PDF library into the app
         run: bash scripts/copy_vendor.sh
 

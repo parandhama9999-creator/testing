@@ -94,6 +94,11 @@ select {
 .bar { height: 14px; background: rgba(255, 255, 255, .18); border-radius: 99px; overflow: hidden; }
 .bar-fill { height: 100%; width: 5%; background: var(--sun); border-radius: 99px; transition: width .3s; }
 
+.bar.is-busy .bar-fill { width: 35% !important; animation: busybar 1.3s ease-in-out infinite alternate; }
+@keyframes busybar { from { transform: translateX(-20%); } to { transform: translateX(205%); } }
+.btn-skip { margin-top: 22px; background: transparent; color: #fff; border-color: rgba(255, 255, 255, .6); font-size: 16px; min-height: 50px; }
+.btn-skip[hidden] { display: none; }
+
 /* ---------- Player ---------- */
 #player { flex-direction: column; background: var(--ink); }
 .top { display: flex; align-items: center; gap: 8px; padding: 8px 10px; color: #fff; }

@@ -144,10 +144,27 @@
         notes.push(Lang.name(src) + ' cannot be translated on this phone yet. Playing in ' + Lang.name(src) + '.');
         tgt = src;
       } else {
-        loadStep('Getting the ' + Lang.name(tgt) + ' language pack. This happens once and needs internet…', 70);
+        loadStep('Downloading the ' + Lang.name(tgt) + ' language pack (about 30 MB, one time only). Please wait…', 70);
         var wanted = tgt;
-        ready = Native.prepareLanguages([src, wanted]).catch(function () {
-          notes.push('The language pack could not be downloaded. Check the internet and try again. Playing in ' + Lang.name(src) + '.');
+        var skip = $('skipBtn');
+        $('loadBar').parentNode.classList.add('is-busy');
+        skip.hidden = false;
+        var skipped = new Promise(function (resolve) {
+          skip.onclick = function () { resolve('skip'); };
+          // Slow or stuck connection: stop waiting after 4 minutes.
+          setTimeout(function () { resolve('slow'); }, 240000);
+        });
+        ready = Promise.race([
+          Native.prepareLanguages([src, wanted]).then(function () { return 'ok'; }, function () { return 'fail'; }),
+          skipped
+        ]).then(function (how) {
+          skip.hidden = true;
+          skip.onclick = null;
+          $('loadBar').parentNode.classList.remove('is-busy');
+          if (how === 'ok') return;
+          if (how === 'fail') notes.push('The language pack could not be downloaded. Check the internet and try again.');
+          if (how === 'slow') notes.push('The language pack is taking too long. It keeps downloading, so try again in a few minutes.');
+          notes.push('Playing in ' + Lang.name(src) + '.');
           tgt = src;
         });
       }
@@ -167,7 +184,9 @@
 
       // Pictures are chosen from English keywords. For other languages the
       // English pack is fetched quietly; until then scenes use general pictures.
-      if (!st.picsReady && Native.canTranslate && Lang.canTranslate(src)) {
+      var net = navigator.connection && navigator.connection.type;
+      var onMobileData = net === 'cellular';
+      if (!st.picsReady && Native.canTranslate && Lang.canTranslate(src) && (!onMobileData || tgt !== src)) {
         Native.prepareLanguages([src]).then(function () {
           st.picsReady = true;
           for (var i = st.idx + 1; i < st.prepared.length; i++) st.prepared[i] = null;
