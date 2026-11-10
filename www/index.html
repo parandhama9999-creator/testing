@@ -15,9 +15,13 @@
     <span class="tw t1">⭐</span><span class="tw t2">✨</span><span class="tw t3">⭐</span><span class="tw t4">✨</span>
   </div>
   <div class="home-card">
-    <div class="pip-wrap pip-home" aria-hidden="true"></div>
     <h1>PDF Kids Narrator</h1>
-    <p class="lede">Pick any PDF. Pip turns it into a story with pictures and reads it aloud.</p>
+    <p class="lede">Pick any PDF. Watch it come alive as a story with moving pictures and a friendly voice.</p>
+
+    <div class="field">
+      <span>Choose your storyteller</span>
+      <div id="heroPicker" class="hero-picker" role="radiogroup" aria-label="Storyteller"></div>
+    </div>
 
     <label class="field" for="langSelect">
       <span>Story language</span>
@@ -28,13 +32,14 @@
     <input id="fileInput" type="file" accept="application/pdf,.pdf" hidden>
     <button id="sampleBtn" class="btn btn-ghost" type="button">▶ Try a sample story</button>
     <p id="homeMsg" class="msg" role="status"></p>
+    <p class="chips"><span>Free</span><span>No ads</span><span>59 languages</span></p>
   </div>
 </main>
 
 <!-- Getting the story ready -->
 <main id="loading" class="screen">
   <div class="loading-box">
-    <div class="pip-wrap pip-load" aria-hidden="true"></div>
+    <div id="loadHero" class="pip-wrap pip-load" aria-hidden="true"></div>
     <p id="loadText" class="load-text">Opening your PDF…</p>
     <div class="bar"><div id="loadBar" class="bar-fill"></div></div>
   </div>
@@ -52,17 +57,24 @@
   </header>
 
   <section id="stage" class="stage theme-day">
-    <div class="decor" aria-hidden="true">
-      <span class="d d1"></span><span class="d d2"></span><span class="d d3"></span>
-    </div>
-    <div class="ground" aria-hidden="true"></div>
+    <div id="bg" class="bg" aria-hidden="true"></div>
+    <canvas id="fx" class="fx" aria-hidden="true"></canvas>
     <div id="props" class="props" aria-hidden="true"></div>
-    <div id="pip" class="pip-wrap pip-stage" aria-hidden="true"></div>
+    <div id="hero" class="hero" aria-hidden="true">
+      <div class="emote"></div>
+      <div class="hero-flip"><div class="hero-art pip-wrap"></div></div>
+    </div>
+    <div id="titleCard" class="title-card" hidden>
+      <div class="title-rays" aria-hidden="true"></div>
+      <div class="title-book" aria-hidden="true">📖</div>
+      <h2 class="title-text"></h2>
+    </div>
     <div id="endCard" class="end-card" hidden>
-      <div class="end-emoji">🎉</div>
+      <div class="end-stars" aria-hidden="true"><span>⭐</span><span>⭐</span><span>⭐</span></div>
       <div class="end-title">The End</div>
       <button id="againBtn" class="btn btn-main" type="button">↺ Watch again</button>
     </div>
+    <div id="wipe" class="wipe" aria-hidden="true"><span></span></div>
     <div id="busy" class="busy" hidden><span></span><span></span><span></span></div>
   </section>
 
@@ -88,6 +100,7 @@
 <script src="js/lang.js"></script>
 <script src="js/story.js"></script>
 <script src="js/native.js"></script>
+<script src="js/stage.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

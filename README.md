@@ -15,7 +15,15 @@ Open the repository's **Releases** page and download `PDF-Kids-Narrator.apk` fro
 3. **Scenes**: the text is cut into short sentences, one per scene (up to 200 scenes).
 4. **Translate** (optional): Google ML Kit translates on the device. Each language pack is about 30 MB and is downloaded once.
 5. **Narrate**: the phone's own text-to-speech voice reads each scene, with the spoken word highlighted.
-6. **Animate**: Pip the owl talks while pictures matching the words pop into a themed background.
+6. **Animate**: a storyteller (Pip the owl, Bolt the robot, Mimi the cat or Bao the panda) talks and reacts while pictures matching the words move through an illustrated scene.
+
+## Animation
+
+- **12 movements**, chosen from the words and never repeated twice in a row: fly in, drop and bounce, parade, orbit, balloon ride, grow, peek, spin, swing, roll, spotlight and pop.
+- **9 illustrated worlds**: day, night, space, under the sea, forest, snow, desert, city and home.
+- **Effects**: rain, snow, bubbles, falling leaves, hearts, sparkles and confetti.
+- **Scene changes**: five different wipes, plus an animated title card and a star ending.
+- **Touch**: tap a picture or the storyteller for a trick, sparkles and a sound.
 
 ## Limits of this first version
 
@@ -33,6 +41,7 @@ www/css/app.css    look and animations
 www/js/lang.js     language list and detection
 www/js/story.js    PDF reading, scene splitting, picture picking
 www/js/native.js   voice, translation, keep-screen-on
+www/js/stage.js    backgrounds, characters, movements, effects, transitions
 www/js/app.js      story player
 scripts/copy_vendor.sh           copies pdf.js into www/vendor
 .github/workflows/build_apk.yml  builds the APK and publishes a release

@@ -3,35 +3,15 @@
   'use strict';
 
   var $ = function (id) { return document.getElementById(id); };
-  var Lang = window.Lang, Story = window.Story, Native = window.Native;
-
-  var PIP_SVG =
-    '<svg viewBox="0 0 120 130" xmlns="http://www.w3.org/2000/svg">' +
-    '<ellipse cx="60" cy="124" rx="34" ry="5" fill="rgba(0,0,0,.18)"/>' +
-    '<g class="pip-body">' +
-    '<path class="pip-wing-l" d="M30 70 Q6 74 12 98 Q24 96 34 86 Z" fill="#ff8f3f" stroke="#1b1464" stroke-width="4" stroke-linejoin="round"/>' +
-    '<path class="pip-wing-r" d="M90 70 Q114 74 108 98 Q96 96 86 86 Z" fill="#ff8f3f" stroke="#1b1464" stroke-width="4" stroke-linejoin="round"/>' +
-    '<path d="M24 34 L34 10 L50 26 Z M96 34 L86 10 L70 26 Z" fill="#ff8f3f" stroke="#1b1464" stroke-width="4" stroke-linejoin="round"/>' +
-    '<ellipse cx="60" cy="72" rx="42" ry="48" fill="#ffb347" stroke="#1b1464" stroke-width="4"/>' +
-    '<ellipse cx="60" cy="90" rx="24" ry="24" fill="#fff3d6"/>' +
-    '<circle cx="42" cy="56" r="16" fill="#fff" stroke="#1b1464" stroke-width="4"/>' +
-    '<circle cx="78" cy="56" r="16" fill="#fff" stroke="#1b1464" stroke-width="4"/>' +
-    '<circle class="pip-eye" cx="44" cy="58" r="7" fill="#1b1464"/>' +
-    '<circle class="pip-eye" cx="76" cy="58" r="7" fill="#1b1464"/>' +
-    '<circle cx="46.5" cy="55.5" r="2.2" fill="#fff"/><circle cx="78.5" cy="55.5" r="2.2" fill="#fff"/>' +
-    '<path class="mouth-shut" d="M52 76 L60 84 L68 76 Z" fill="#ff6b6b" stroke="#1b1464" stroke-width="3.5" stroke-linejoin="round"/>' +
-    '<path class="mouth-open" d="M50 74 L60 92 L70 74 Z" fill="#ff6b6b" stroke="#1b1464" stroke-width="3.5" stroke-linejoin="round"/>' +
-    '<path d="M46 118 l-6 6 M50 118 l0 7 M70 118 l0 7 M74 118 l6 6" stroke="#1b1464" stroke-width="4" stroke-linecap="round"/>' +
-    '</g></svg>';
+  var Lang = window.Lang, Story = window.Story, Native = window.Native, Stage = window.Stage;
 
   var RTL = { ar: 1, ur: 1, fa: 1, he: 1 };
-  var DEFAULT_THEMES = ['day', 'forest', 'home', 'sand'];
 
   var st = {
     scenes: [], prepared: [], idx: 0, token: 0,
     playing: false, ended: false,
     src: 'en', tgt: 'en', voice: true, picsReady: false,
-    rate: 1, theme: 'day', title: ''
+    rate: 1, title: '', first: true
   };
 
   // ---------- helpers ----------
@@ -85,6 +65,35 @@
     var saved = store('pdfkids.lang');
     if (saved && (saved === 'auto' || Lang.get(saved))) sel.value = saved;
     sel.addEventListener('change', function () { store('pdfkids.lang', sel.value); });
+  }
+
+  function fillHeroes() {
+    var box = $('heroPicker');
+    var saved = store('pdfkids.hero');
+    if (!Stage.CHARACTERS[saved]) saved = 'owl';
+    function choose(id) {
+      Stage.setCharacter(id);
+      $('loadHero').innerHTML = Stage.characterSvg(id);
+      store('pdfkids.hero', id);
+      var all = box.children;
+      for (var k = 0; k < all.length; k++) {
+        var on = all[k].getAttribute('data-id') === id;
+        all[k].classList.toggle('is-on', on);
+        all[k].setAttribute('aria-checked', on ? 'true' : 'false');
+      }
+    }
+    Object.keys(Stage.CHARACTERS).forEach(function (id) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hero-pick';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('data-id', id);
+      b.innerHTML = Stage.characterSvg(id) + '<span></span>';
+      b.lastChild.textContent = Stage.CHARACTERS[id].name;
+      b.addEventListener('click', function () { choose(id); });
+      box.appendChild(b);
+    });
+    choose(saved);
   }
 
   function onFile(file) {
@@ -151,7 +160,8 @@
       st.scenes = scenes;
       st.prepared = [];
       st.src = src; st.tgt = tgt; st.voice = voice;
-      st.title = title; st.theme = 'day';
+      st.title = title; st.first = true;
+      st.idx = 0;
       st.ended = false;
       st.picsReady = src === 'en' || tgt === 'en';
 
@@ -178,7 +188,14 @@
       }
       st.playing = true;
       updatePlayBtn();
-      play(0);
+      $('caption').innerHTML = '';
+      $('endCard').hidden = true;
+      $('storyMeta').textContent = Lang.name(tgt);
+      $('progFill').style.width = '0';
+      var token = ++st.token;
+      return Stage.title(title).then(function () {
+        if (token === st.token) play(0);
+      });
     });
   }
 
@@ -199,29 +216,15 @@
       else if (picsReady) english = Native.translate(text, src, 'en').catch(function () { return null; });
       else english = Promise.resolve(null);
       return english.then(function (en) {
-        var pics = Story.pickPictures(en, i);
-        return { caption: cap, emojis: pics.emojis, theme: pics.theme };
+        var scene = Story.pickPictures(en, i, cap);
+        scene.caption = cap;
+        return scene;
       });
     });
     return st.prepared[i];
   }
 
   function render(scene, i) {
-    var stage = $('stage');
-    var theme = scene.theme || (i === 0 ? 'day' : st.theme) || DEFAULT_THEMES[i % DEFAULT_THEMES.length];
-    st.theme = theme;
-    stage.className = 'stage theme-' + theme;
-
-    var props = $('props');
-    props.className = 'props n' + scene.emojis.length;
-    props.innerHTML = '';
-    scene.emojis.forEach(function (e) {
-      var s = document.createElement('span');
-      s.className = 'prop';
-      s.textContent = e;
-      props.appendChild(s);
-    });
-
     var cap = $('caption');
     cap.innerHTML = '';
     var re = /\S+|\s+/g, m;
@@ -259,7 +262,7 @@
     lastOn = null;
   }
 
-  function talking(on) { $('pip').classList.toggle('talking', !!on); }
+  function talking(on) { Stage.talk(on); }
 
   function play(i) {
     if (i < 0) i = 0;
@@ -277,19 +280,31 @@
       clearTimeout(busyTimer);
       if (token !== st.token || !scene) return;
       $('busy').hidden = true;
-      render(scene, i);
       prepare(i + 1); prepare(i + 2);
-      if (!st.playing) return;
-      talking(true);
-      Native.speak(scene.caption, st.tgt, st.rate, highlight, st.voice).then(function (done) {
+      var first = st.first;
+      st.first = false;
+      return Stage.show(scene, i, first).then(function () {
         if (token !== st.token) return;
-        talking(false);
-        clearHighlight();
-        if (!done || !st.playing) return;
-        setTimeout(function () {
-          if (token === st.token && st.playing) play(i + 1);
-        }, 650);
+        render(scene, i);
+        if (!st.playing) return;
+        return new Promise(function (r) { setTimeout(r, 450); }).then(function () {
+          if (token !== st.token || !st.playing) return;
+          speakScene(scene, i, token);
+        });
       });
+    });
+  }
+
+  function speakScene(scene, i, token) {
+    talking(true);
+    Native.speak(scene.caption, st.tgt, st.rate, highlight, st.voice).then(function (done) {
+      if (token !== st.token) return;
+      talking(false);
+      clearHighlight();
+      if (!done || !st.playing) return;
+      setTimeout(function () {
+        if (token === st.token && st.playing) play(i + 1);
+      }, 900);
     });
   }
 
@@ -302,6 +317,7 @@
     clearHighlight();
     updatePlayBtn();
     $('endCard').hidden = false;
+    Stage.celebrate();
     Native.keepAwake(false);
   }
 
@@ -330,8 +346,8 @@
 
   // ---------- wiring ----------
   function init() {
-    var pips = document.querySelectorAll('.pip-wrap');
-    for (var i = 0; i < pips.length; i++) pips[i].innerHTML = PIP_SVG;
+    Stage.init();
+    fillHeroes();
     fillLanguages();
 
     $('pickBtn').addEventListener('click', function () { $('fileInput').click(); });
@@ -362,6 +378,7 @@
     $('backBtn').addEventListener('click', function () {
       pause();
       hideToast();
+      Stage.stopFx();
       show('home');
     });
     document.addEventListener('visibilitychange', function () {

@@ -148,8 +148,8 @@
     ocean: ['🌊', 'sea'], wave: ['🌊', 'sea'], beach: ['🏖️', 'sand'], island: ['🏝️', 'sea'],
     fish: ['🐟', 'sea'], whale: ['🐋', 'sea'], shark: ['🦈', 'sea'], dolphin: ['🐬', 'sea'],
     octopus: ['🐙', 'sea'], crab: ['🦀', 'sand'], turtle: ['🐢', 'sea'], boat: ['⛵', 'sea'], ship: ['🚢', 'sea'],
-    earth: ['🌍', 'night'], world: ['🌍'], planet: ['🪐', 'night'], space: ['🚀', 'night'],
-    rocket: ['🚀', 'night'], astronaut: ['👩‍🚀', 'night'], galaxy: ['🌌', 'night'], gravity: ['🍎'],
+    earth: ['🌍', 'space'], world: ['🌍'], planet: ['🪐', 'space'], space: ['🚀', 'space'],
+    rocket: ['🚀', 'space'], astronaut: ['👩‍🚀', 'space'], galaxy: ['🌌', 'space'], gravity: ['🍎'],
     mountain: ['⛰️', 'forest'], hill: ['⛰️', 'forest'], volcano: ['🌋'], desert: ['🏜️', 'sand'],
     sand: ['🏖️', 'sand'], rock: ['🪨'], stone: ['🪨'], soil: ['🌱', 'forest'], ground: ['🌱'],
     tree: ['🌳', 'forest'], forest: ['🌲', 'forest'], jungle: ['🌴', 'forest'], leaf: ['🍃', 'forest'],
@@ -197,30 +197,71 @@
   };
   var FALLBACK = ['✨', '📖', '💡', '🌈', '⭐', '🎈', '🪁', '🧩'];
 
-  function lookup(word) {
-    if (PICS[word]) return PICS[word];
-    if (word.length > 3 && word.slice(-3) === 'ies' && PICS[word.slice(0, -3) + 'y']) return PICS[word.slice(0, -3) + 'y'];
-    if (word.length > 3 && word.slice(-2) === 'es' && PICS[word.slice(0, -2)]) return PICS[word.slice(0, -2)];
-    if (word.length > 2 && word.slice(-1) === 's' && PICS[word.slice(0, -1)]) return PICS[word.slice(0, -1)];
-    if (word.length > 4 && word.slice(-3) === 'ing' && PICS[word.slice(0, -3)]) return PICS[word.slice(0, -3)];
-    if (word.length > 3 && word.slice(-2) === 'ed' && PICS[word.slice(0, -2)]) return PICS[word.slice(0, -2)];
+  // Action words decide how the pictures move.
+  var MOTION = {
+    fly: 'fly', flew: 'fly', flying: 'fly', bird: 'fly', plane: 'fly', airplane: 'fly', wind: 'fly', butterfly: 'fly', bee: 'fly', eagle: 'fly',
+    fall: 'drop', fell: 'drop', rain: 'drop', down: 'drop',
+    grow: 'grow', grew: 'grow', seed: 'grow', plant: 'grow', tree: 'grow', flower: 'grow',
+    run: 'parade', ran: 'parade', walk: 'parade', walked: 'parade', went: 'parade', go: 'parade', march: 'parade', travel: 'parade', bus: 'parade', car: 'parade', train: 'parade',
+    around: 'orbit', cycle: 'orbit', earth: 'orbit', planet: 'orbit', moon: 'orbit', turn: 'orbit', orbit: 'orbit',
+    up: 'balloon', rise: 'balloon', rose: 'balloon', vapor: 'balloon', vapour: 'balloon', balloon: 'balloon', float: 'balloon',
+    hide: 'peek', hid: 'peek', secret: 'peek', look: 'peek', peek: 'peek', find: 'peek', who: 'peek', where: 'peek',
+    jump: 'bounce', jumped: 'bounce', play: 'bounce', ball: 'bounce', hop: 'bounce', frog: 'bounce', rabbit: 'bounce',
+    dance: 'spin', magic: 'spin', spin: 'spin', wheel: 'spin',
+    hang: 'swing', sleep: 'swing', monkey: 'swing', swing: 'swing', night: 'swing',
+    big: 'zoom', biggest: 'zoom', huge: 'zoom', giant: 'zoom', important: 'zoom', sun: 'zoom', king: 'zoom', called: 'zoom'
+  };
+  var FX = {
+    rain: 'rain', storm: 'rain', snow: 'snow', winter: 'snow', ice: 'snow',
+    love: 'hearts', heart: 'hearts', mother: 'hearts', family: 'hearts', friend: 'hearts',
+    party: 'confetti', birthday: 'confetti', win: 'confetti', won: 'confetti', celebrate: 'confetti', festival: 'confetti',
+    magic: 'sparkle', shine: 'sparkle', bright: 'sparkle', gold: 'sparkle', treasure: 'sparkle', wonderful: 'sparkle', star: 'sparkle',
+    leaf: 'leaves', autumn: 'leaves', wind: 'leaves', bubble: 'bubbles', swim: 'bubbles'
+  };
+  var MOOD = {
+    happy: 'happy', love: 'happy', smile: 'happy', laugh: 'happy', friend: 'happy', fun: 'happy', joy: 'happy',
+    sad: 'sad', cry: 'sad', cried: 'sad', alone: 'sad', lost: 'sad', hurt: 'sad',
+    idea: 'idea', learn: 'idea', know: 'idea', because: 'idea', why: 'idea', think: 'idea', called: 'idea'
+  };
+
+  function stem(word, table) {
+    if (table[word]) return table[word];
+    if (word.length > 3 && word.slice(-3) === 'ies' && table[word.slice(0, -3) + 'y']) return table[word.slice(0, -3) + 'y'];
+    if (word.length > 3 && word.slice(-2) === 'es' && table[word.slice(0, -2)]) return table[word.slice(0, -2)];
+    if (word.length > 2 && word.slice(-1) === 's' && table[word.slice(0, -1)]) return table[word.slice(0, -1)];
+    if (word.length > 4 && word.slice(-3) === 'ing' && table[word.slice(0, -3)]) return table[word.slice(0, -3)];
+    if (word.length > 3 && word.slice(-2) === 'ed' && table[word.slice(0, -2)]) return table[word.slice(0, -2)];
     return null;
   }
 
   // englishText may be null when no English version of the scene is available.
-  function pickPictures(englishText, index) {
-    var emojis = [], theme = null;
+  // caption is the text shown on screen (any language); its punctuation sets the mood.
+  function pickPictures(englishText, index, caption) {
+    var out = { emojis: [], theme: null, motion: null, fx: null, mood: null, plural: false };
     if (englishText) {
       var words = englishText.toLowerCase().split(/[^a-z]+/);
-      for (var i = 0; i < words.length && emojis.length < 3; i++) {
-        var hit = words[i] && lookup(words[i]);
-        if (!hit) continue;
-        if (emojis.indexOf(hit[0]) < 0) emojis.push(hit[0]);
-        if (!theme && hit[1]) theme = hit[1];
+      for (var i = 0; i < words.length; i++) {
+        var w = words[i];
+        if (!w) continue;
+        if (out.emojis.length < 3) {
+          var hit = stem(w, PICS);
+          if (hit && out.emojis.indexOf(hit[0]) < 0) {
+            out.emojis.push(hit[0]);
+            if (!out.theme && hit[1]) out.theme = hit[1];
+            if (out.emojis.length === 1) out.plural = !PICS[w] && /s$/.test(w);
+          }
+        }
+        if (!out.motion) out.motion = stem(w, MOTION);
+        if (!out.fx) out.fx = stem(w, FX);
+        if (!out.mood) out.mood = stem(w, MOOD);
       }
+      if (/\b(many|lots|all|some|two|three|four|five)\b/.test(englishText.toLowerCase())) out.plural = true;
     }
-    if (!emojis.length) emojis.push(FALLBACK[index % FALLBACK.length]);
-    return { emojis: emojis, theme: theme };
+    var shown = caption || englishText || '';
+    if (/[?？؟]/.test(shown)) out.mood = 'ask';
+    else if (/[!！]/.test(shown) && !out.mood) out.mood = 'wow';
+    if (!out.emojis.length) out.emojis.push(FALLBACK[index % FALLBACK.length]);
+    return out;
   }
 
   var SAMPLE = [
