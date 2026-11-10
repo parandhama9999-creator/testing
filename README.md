@@ -1,0 +1,49 @@
+# PDF Kids Narrator
+
+Android app that turns a PDF into an animated, narrated story for children, in the PDF's own language or a language you pick. Everything runs on the phone with free services, so there are no API keys and no running costs.
+
+This branch (`kids-pdf-narrator`) is separate from the other app in this repository.
+
+## Download
+
+Open the repository's **Releases** page and download `PDF-Kids-Narrator.apk` from the newest "PDF Kids Narrator" release. Every push to this branch builds a new one.
+
+## How it works
+
+1. **Read**: `pdf.js` pulls the text out of the PDF (first 40 pages).
+2. **Detect**: the language is detected on the device from the script and common words.
+3. **Scenes**: the text is cut into short sentences, one per scene (up to 200 scenes).
+4. **Translate** (optional): Google ML Kit translates on the device. Each language pack is about 30 MB and is downloaded once.
+5. **Narrate**: the phone's own text-to-speech voice reads each scene, with the spoken word highlighted.
+6. **Animate**: Pip the owl talks while pictures matching the words pop into a themed background.
+
+## Limits of this first version
+
+- Scanned PDFs (photos of pages) have no readable text and are not supported.
+- The wording is not rewritten into simpler language. That needs an AI model, which is a paid service.
+- It plays inside the app. It does not export a video file.
+- Translation covers the 59 ML Kit languages. Malayalam, Punjabi and Odia are narrated in the original language only.
+- Narration needs a voice for that language installed on the phone (Settings → Text-to-speech).
+
+## Project layout
+
+```
+www/index.html     screens
+www/css/app.css    look and animations
+www/js/lang.js     language list and detection
+www/js/story.js    PDF reading, scene splitting, picture picking
+www/js/native.js   voice, translation, keep-screen-on
+www/js/app.js      story player
+scripts/copy_vendor.sh           copies pdf.js into www/vendor
+.github/workflows/build_apk.yml  builds the APK and publishes a release
+```
+
+## Run in a desktop browser
+
+```
+npm install
+npm run vendor
+npm run serve     # then open http://localhost:8080
+```
+
+Translation only works in the installed Android app.

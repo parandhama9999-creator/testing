@@ -1,0 +1,12 @@
+{
+  "appId": "com.parandama.pdfkids",
+  "appName": "PDF Kids Narrator",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#1b1464"
+  }
+}

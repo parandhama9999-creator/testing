@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1b1464">
+<title>PDF Kids Narrator</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- Home -->
+<main id="home" class="screen is-active">
+  <div class="home-sky" aria-hidden="true">
+    <span class="tw t1">⭐</span><span class="tw t2">✨</span><span class="tw t3">⭐</span><span class="tw t4">✨</span>
+  </div>
+  <div class="home-card">
+    <div class="pip-wrap pip-home" aria-hidden="true"></div>
+    <h1>PDF Kids Narrator</h1>
+    <p class="lede">Pick any PDF. Pip turns it into a story with pictures and reads it aloud.</p>
+
+    <label class="field" for="langSelect">
+      <span>Story language</span>
+      <select id="langSelect"></select>
+    </label>
+
+    <button id="pickBtn" class="btn btn-main" type="button">📄 Choose a PDF</button>
+    <input id="fileInput" type="file" accept="application/pdf,.pdf" hidden>
+    <button id="sampleBtn" class="btn btn-ghost" type="button">▶ Try a sample story</button>
+    <p id="homeMsg" class="msg" role="status"></p>
+  </div>
+</main>
+
+<!-- Getting the story ready -->
+<main id="loading" class="screen">
+  <div class="loading-box">
+    <div class="pip-wrap pip-load" aria-hidden="true"></div>
+    <p id="loadText" class="load-text">Opening your PDF…</p>
+    <div class="bar"><div id="loadBar" class="bar-fill"></div></div>
+  </div>
+</main>
+
+<!-- Story player -->
+<main id="player" class="screen">
+  <header class="top">
+    <button id="backBtn" class="icon-btn" type="button" aria-label="Back to home">←</button>
+    <div class="top-mid">
+      <div id="storyTitle" class="story-title"></div>
+      <div id="storyMeta" class="story-meta"></div>
+    </div>
+    <button id="speedBtn" class="icon-btn" type="button" aria-label="Reading speed">🐇</button>
+  </header>
+
+  <section id="stage" class="stage theme-day">
+    <div class="decor" aria-hidden="true">
+      <span class="d d1"></span><span class="d d2"></span><span class="d d3"></span>
+    </div>
+    <div class="ground" aria-hidden="true"></div>
+    <div id="props" class="props" aria-hidden="true"></div>
+    <div id="pip" class="pip-wrap pip-stage" aria-hidden="true"></div>
+    <div id="endCard" class="end-card" hidden>
+      <div class="end-emoji">🎉</div>
+      <div class="end-title">The End</div>
+      <button id="againBtn" class="btn btn-main" type="button">↺ Watch again</button>
+    </div>
+    <div id="busy" class="busy" hidden><span></span><span></span><span></span></div>
+  </section>
+
+  <section class="caption-wrap">
+    <p id="caption" class="caption" aria-live="polite"></p>
+  </section>
+
+  <div class="progress"><div id="progFill" class="progress-fill"></div></div>
+
+  <footer class="controls">
+    <button id="prevBtn" class="ctl" type="button" aria-label="Previous scene">⏮</button>
+    <button id="playBtn" class="ctl ctl-main" type="button" aria-label="Pause">⏸</button>
+    <button id="nextBtn" class="ctl" type="button" aria-label="Next scene">⏭</button>
+  </footer>
+
+  <div id="toast" class="toast" hidden>
+    <span id="toastText"></span>
+    <button id="toastBtn" class="toast-btn" type="button" hidden></button>
+  </div>
+</main>
+
+<script src="vendor/pdf.min.js"></script>
+<script src="js/lang.js"></script>
+<script src="js/story.js"></script>
+<script src="js/native.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

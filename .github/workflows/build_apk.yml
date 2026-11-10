@@ -1,0 +1,90 @@
+name: Build PDF Kids Narrator APK
+
+on:
+  push:
+    branches: [kids-pdf-narrator]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java 21 (required by Capacitor 7)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Accept Android SDK licences and install build tools
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Copy PDF library into the app
+        run: bash scripts/copy_vendor.sh
+
+      - name: Check JavaScript syntax
+        run: for f in www/js/*.js; do node --check "$f"; done
+
+      - name: Generate Android project
+        run: npx cap add android
+
+      - name: Capacitor sync
+        run: npx cap sync android
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: pdfkids-gradle-${{ hashFiles('package.json') }}
+          restore-keys: pdfkids-gradle-
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/PDF-Kids-Narrator.apk
+          ls -la dist
+
+      - name: Upload APK as build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PDF-Kids-Narrator-apk
+          path: dist/PDF-Kids-Narrator.apk
+          if-no-files-found: error
+
+      - name: Publish APK as a release (direct download link)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="pdf-kids-v0.1.${{ github.run_number }}"
+          gh release create "$TAG" dist/PDF-Kids-Narrator.apk \
+            --target "$GITHUB_SHA" \
+            --title "PDF Kids Narrator (test build ${{ github.run_number }})" \
+            --notes "Test build of PDF Kids Narrator. Download PDF-Kids-Narrator.apk below and install it on an Android phone." \
+            --prerelease

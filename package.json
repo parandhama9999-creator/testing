@@ -1,0 +1,25 @@
+{
+  "name": "pdf-kids-narrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turns a PDF into an animated, narrated story for kids in their own language. Runs on the device, no paid services.",
+  "scripts": {
+    "vendor": "bash scripts/copy_vendor.sh",
+    "check": "for f in www/js/*.js; do node --check \"$f\" || exit 1; done && echo 'All JS OK'",
+    "serve": "python3 -m http.server 8080 --directory www"
+  },
+  "dependencies": {
+    "@capacitor-community/keep-awake": "~7.1.0",
+    "@capacitor-community/text-to-speech": "~6.1.0",
+    "@capacitor-mlkit/translation": "~7.5.0",
+    "@capacitor/android": "~7.6.9",
+    "@capacitor/core": "~7.6.9",
+    "pdfjs-dist": "3.11.174"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "~7.6.9"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
