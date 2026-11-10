@@ -69,6 +69,16 @@ select {
 }
 .btn-main { background: var(--sun); color: var(--ink); box-shadow: 0 6px 0 var(--ink); }
 .btn-main:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
+.btn-cam { background: var(--mint); color: var(--ink); box-shadow: 0 6px 0 var(--ink); }
+.btn-cam:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
+.sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; background: rgba(12, 8, 60, .6); }
+.sheet[hidden] { display: none; }
+.sheet-card {
+  width: min(100%, 460px); background: var(--paper); border-radius: 28px 28px 0 0;
+  padding: 20px 20px calc(18px + env(safe-area-inset-bottom)); animation: up-in .28s ease-out;
+}
+.sheet-card h2 { margin: 0 0 6px; font-size: 22px; }
+.sheet-card p { margin: 0 0 14px; font-size: 15px; line-height: 1.4; color: var(--ink-soft); }
 .btn-ghost { background: transparent; color: var(--ink); border-style: dashed; }
 .btn-ghost:active { background: #f1e9d6; }
 .msg { min-height: 20px; margin: 12px 4px 0; font-size: 14px; line-height: 1.35; color: #c0392b; font-weight: 600; }

@@ -13,8 +13,11 @@
     "@capacitor-community/text-to-speech": "~6.1.0",
     "@capacitor-mlkit/translation": "~7.5.0",
     "@capacitor/android": "~7.6.9",
+    "@capacitor/camera": "~7.0.5",
     "@capacitor/core": "~7.6.9",
-    "pdfjs-dist": "3.11.174"
+    "@tesseract.js-data/eng": "^1.0.0",
+    "pdfjs-dist": "3.11.174",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "~7.6.9"

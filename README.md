@@ -17,6 +17,10 @@ Open the repository's **Releases** page and download `PDF-Kids-Narrator.apk` fro
 5. **Narrate**: the phone's own text-to-speech voice reads each scene, with the spoken word highlighted.
 6. **Animate**: a storyteller (Pip the owl, Bolt the robot, Mimi the cat or Bao the panda) talks and reacts while pictures matching the words move through an illustrated scene.
 
+## Camera
+
+**Scan a book page** takes a photo (or picks one from the gallery) and reads the words with the Tesseract text reader inside the app. You choose the language printed on the page. English works offline; every other language downloads a reading pack (2 to 15 MB) the first time.
+
 ## Animation
 
 - **12 movements**, chosen from the words and never repeated twice in a row: fly in, drop and bounce, parade, orbit, balloon ride, grow, peek, spin, swing, roll, spotlight and pop.
@@ -27,7 +31,7 @@ Open the repository's **Releases** page and download `PDF-Kids-Narrator.apk` fro
 
 ## Limits of this first version
 
-- Scanned PDFs (photos of pages) have no readable text and are not supported.
+- Scanned PDFs (photos of pages) are not supported yet. Use **Scan a book page** for printed pages.
 - The wording is not rewritten into simpler language. That needs an AI model, which is a paid service.
 - It plays inside the app. It does not export a video file.
 - Translation covers the 59 ML Kit languages. Malayalam, Punjabi and Odia are narrated in the original language only.
@@ -41,6 +45,7 @@ www/css/app.css    look and animations
 www/js/lang.js     language list and detection
 www/js/story.js    PDF reading, scene splitting, picture picking
 www/js/native.js   voice, translation, keep-screen-on
+www/js/ocr.js      camera photo and reading the words on it
 www/js/stage.js    backgrounds, characters, movements, effects, transitions
 www/js/app.js      story player
 scripts/copy_vendor.sh           copies pdf.js into www/vendor

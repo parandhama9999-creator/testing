@@ -3,7 +3,7 @@
   'use strict';
 
   var $ = function (id) { return document.getElementById(id); };
-  var Lang = window.Lang, Story = window.Story, Native = window.Native, Stage = window.Stage;
+  var Lang = window.Lang, Story = window.Story, Native = window.Native, Stage = window.Stage, Ocr = window.Ocr;
 
   var RTL = { ar: 1, ur: 1, fa: 1, he: 1 };
 
@@ -53,7 +53,7 @@
     var sel = $('langSelect');
     var auto = document.createElement('option');
     auto.value = 'auto';
-    auto.textContent = 'Same as the PDF (auto)';
+    auto.textContent = 'Same as the original (auto)';
     sel.appendChild(auto);
     Lang.LIST.forEach(function (l) {
       if (!l.translate) return;
@@ -120,17 +120,55 @@
     reader.readAsArrayBuffer(file);
   }
 
+  // ---------- camera ----------
+  function fillPageLanguages() {
+    var sel = $('pageLang');
+    Lang.LIST.forEach(function (l) {
+      if (!Ocr.supports(l.code)) return;
+      var o = document.createElement('option');
+      o.value = l.code;
+      o.textContent = Lang.label(l.code);
+      sel.appendChild(o);
+    });
+    var saved = store('pdfkids.pageLang');
+    if (saved && Lang.get(saved)) sel.value = saved;
+  }
+
+  function scanPage() {
+    var lang = $('pageLang').value;
+    store('pdfkids.pageLang', lang);
+    $('camSheet').hidden = true;
+    homeMsg('');
+    Ocr.takePhoto($('photoInput')).then(function (url) {
+      if (!url) return;
+      show('loading');
+      loadStep('Looking at your page…', 8);
+      return Ocr.read(url, lang, function (stage, p) {
+        if (stage === 'pack') loadStep('Getting the ' + Lang.name(lang) + ' reading pack (one time, needs internet)…', 10 + 20 * p);
+        else if (stage === 'read') loadStep('Reading the words on the page…', 30 + 60 * p);
+      }).then(function (text) {
+        if (Story.countLetters(text) < 12) {
+          return fail('No words could be read from that photo. Try brighter light, hold the phone flat and fill the screen with the page.');
+        }
+        return begin(text, 'My book page', '', lang);
+      });
+    }).catch(function () {
+      fail('The page could not be read. For languages other than English the first scan needs internet. Please try again.');
+    });
+  }
+
   function fail(text) {
     show('home');
     homeMsg(text);
   }
 
   // ---------- getting the story ready ----------
-  function begin(text, title, note) {
+  // knownLang is set when the language is already known (camera pages).
+  function begin(text, title, note, knownLang) {
     var scenes = Story.buildScenes(text);
     if (!scenes.length) return fail('No sentences were found in this PDF.');
 
-    var src = Lang.detect(text);
+    var src = knownLang || Lang.detect(text);
     var choice = $('langSelect').value;
     var tgt = choice === 'auto' ? src : choice;
     var notes = note ? [note] : [];
@@ -368,6 +406,7 @@
     Stage.init();
     fillHeroes();
     fillLanguages();
+    fillPageLanguages();
 
     $('pickBtn').addEventListener('click', function () { $('fileInput').click(); });
     $('fileInput').addEventListener('change', function (e) {
@@ -375,6 +414,10 @@
       e.target.value = '';
       onFile(f);
     });
+    $('camBtn').addEventListener('click', function () { $('camSheet').hidden = false; });
+    $('camCancel').addEventListener('click', function () { $('camSheet').hidden = true; });
+    $('camSheet').addEventListener('click', function (e) { if (e.target === $('camSheet')) $('camSheet').hidden = true; });
+    $('camGo').addEventListener('click', scanPage);
     $('sampleBtn').addEventListener('click', function () {
       homeMsg('');
       show('loading');
@@ -408,5 +451,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 
-  window.PdfKids = { state: st, begin: begin, onFile: onFile };
+  window.PdfKids = { state: st, begin: begin, onFile: onFile, scanPage: scanPage };
 })();
