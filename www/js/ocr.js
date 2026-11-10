@@ -81,7 +81,7 @@
       }
     };
     if (window.OCR_LANG_PATH) opts.langPath = window.OCR_LANG_PATH;
-    else if (code === 'eng') opts.langPath = abs('vendor/tess/lang');
+    else if (code === 'eng') { opts.langPath = abs('vendor/tess/lang'); opts.gzip = false; }
 
     var worker = null;
     return prepareImage(url).then(function (canvas) {

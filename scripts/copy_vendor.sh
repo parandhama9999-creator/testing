@@ -20,5 +20,6 @@ cp node_modules/tesseract.js/dist/tesseract.min.js node_modules/tesseract.js/dis
 cp node_modules/tesseract.js-core/tesseract-core-lstm.wasm.js \
    node_modules/tesseract.js-core/tesseract-core-simd-lstm.wasm.js \
    node_modules/tesseract.js-core/tesseract-core-relaxedsimd-lstm.wasm.js "$TESS/core/"
-cp node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz "$TESS/lang/"
+# Stored unzipped: the Android build renames .gz files, which breaks loading.
+gunzip -c node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz > "$TESS/lang/eng.traineddata"
 echo "Text reader copied to $TESS"
